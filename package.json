@@ -1,0 +1,35 @@
+{
+  "name": "pen-fight-arena",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src tests next.config.ts eslint.config.mjs --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.js",
+    "format": "prettier --write src tests docs/*.md README.md CONTRIBUTING.md next.config.ts eslint.config.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.128.0",
+    "eslint": "9.28.0",
+    "eslint-config-next": "16.4.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

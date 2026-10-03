@@ -1,0 +1,140 @@
+@import "../features/game/ui/game.css";
+@import "../features/pen/ui/pen.css";
+@import "../features/game/ui/game-ui.css";
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #171a17;
+  color: #f7f4eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+body {
+  min-height: 100vh;
+}
+button,
+a {
+  font: inherit;
+}
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.app-header {
+  height: 54px;
+  flex: 0 0 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: #191d19;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f7f4eb;
+  text-decoration: none;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+.app-brand-mark {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 8px;
+  background: #f3d999;
+  color: #30281a;
+}
+.app-caption {
+  color: #b4b7ae;
+  font-size: 12px;
+}
+.game-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: calc(100dvh - 54px);
+  background: #20231f;
+}
+.game-runtime {
+  width: 100%;
+  height: 100%;
+}
+.runtime-error {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  max-width: min(90vw, 560px);
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #8f2d25;
+  color: #fff;
+  box-shadow: 0 8px 30px #0006;
+}
+.fullscreen-button {
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: rgba(20, 23, 20, 0.82);
+  color: #fff;
+  cursor: pointer;
+}
+.fullscreen-button:hover {
+  background: #282e28;
+}
+@media (max-width: 640px) {
+  .app-header {
+    height: 46px;
+    flex-basis: 46px;
+    padding-inline: 12px;
+  }
+  .app-caption {
+    display: none;
+  }
+  .game-area {
+    height: calc(100dvh - 46px);
+  }
+}
+
+.runtime-status {
+  position: absolute;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #20231f;
+  color: white;
+}
+.benchmark-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.runtime-error {
+  z-index: 60;
+}
