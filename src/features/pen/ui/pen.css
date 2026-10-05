@@ -1,0 +1,62 @@
+.pen-color-box {
+  margin-top: 8px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+.pc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.pc-top strong {
+  font-size: 12px;
+}
+.pc-name {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pc-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pc-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  padding: 0;
+}
+.pc-swatch.on {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.pc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pc-input-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.pc-input {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.pc-hex {
+  font: 400 11px var(--mono);
+  color: var(--muted);
+}
