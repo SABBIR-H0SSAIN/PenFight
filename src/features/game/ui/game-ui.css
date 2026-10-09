@@ -1,0 +1,130 @@
+/* Shared notebook UI: keep these rules independent of OS light/dark preference. */
+.game-runtime {
+  color-scheme: light;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+#pause .card,
+#end .card {
+  width: min(380px, 100%);
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  background-color: #fffbed;
+  backdrop-filter: none;
+}
+.dialog-eyebrow {
+  color: #7a6854;
+  font: 600 10px/1.4 var(--mono);
+  letter-spacing: 0.12em;
+}
+#pause .card .mbtn,
+#end .card .mbtn {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+#pause .card .mbtn:hover,
+#end .card .mbtn:hover {
+  background: #e8dec16b;
+  transform: none;
+}
+#pause .card .mbtn:focus-visible,
+#end .card .mbtn:focus-visible {
+  outline: 2px solid #386b92;
+  outline-offset: 2px;
+}
+#hud .score {
+  width: clamp(290px, 28vw, 370px);
+}
+#hud .score .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+#hud .score .nm {
+  max-width: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.1;
+}
+#speedBox select {
+  color-scheme: light;
+}
+#lab .lh label {
+  flex: 1;
+  min-width: 0;
+}
+#lab .lh select {
+  width: 100%;
+}
+@media (min-width: 761px) and (orientation: landscape) {
+  .lab-on #hud {
+    right: 420px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .lab-on #hud .brand {
+    display: none;
+  }
+  .lab-on #hud .score {
+    width: min(310px, 100%);
+    min-width: 0;
+  }
+  .lab-on #hud .tools {
+    max-width: 240px;
+  }
+  .lab-on #bottom {
+    right: 420px;
+  }
+  .lab-on #think {
+    left: calc((100% - 420px) / 2);
+    max-width: calc(100% - 452px);
+  }
+}
+@media (max-width: 1100px) and (min-width: 761px) and (orientation: landscape) {
+  #hud {
+    grid-template-columns: auto 1fr;
+  }
+  #hud .brand {
+    display: none;
+  }
+  .lab-on #hud {
+    grid-template-columns: 1fr;
+  }
+  .lab-on #hud .tools {
+    max-width: none;
+    justify-content: flex-start;
+  }
+  .lab-on #think {
+    top: 170px;
+  }
+}
+@media (max-width: 760px), (orientation: portrait) {
+  #hud .score {
+    width: min(340px, calc(100vw - 27px));
+  }
+  .lab-on #bottom,
+  .lab-on #think {
+    visibility: hidden;
+  }
+  #pause .card,
+  #end .card {
+    transform: none;
+    padding: 18px;
+  }
+  #pause .card h2,
+  #end .card h2 {
+    font-size: 38px;
+  }
+}
