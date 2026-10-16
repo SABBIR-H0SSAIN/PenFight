@@ -53,7 +53,7 @@ The renderer cleanup stops the controller before disposing the scene. Feature cl
 - **Simulation:** physics in `src/game/physics`; coordination, input and match modes in `src/game/controller`.
 - **Rendering service:** common lighting, effects, board rendering and camera access in `src/game/scene`.
 
-Shared interface styles retain their established cascade in `src/features/game/ui/game.css`; pen colour controls are colocated in `src/features/pen/ui/pen.css`. Keep visual-only changes out of physics modules. Existing source assets in `assets/human` are not loaded by the procedural character.
+Shared interface styles retain their established cascade in `src/features/game/ui/game.css`; pen colour controls are colocated in `src/features/pen/ui/pen.css`. Keep visual-only changes out of physics modules. Characters use procedural geometry without external head scans or skin textures.
 
 `GameDialog.tsx` owns the shared notebook dialog and keyboard focus handling; responsive HUD and dialog corrections live in `src/features/game/ui/game-ui.css`. `src/game/controller/playback.js` defines the single brief impact slowdown and cropped highlight window. Character reach easing and wrist constraints live in `src/features/character/motion.js`; articulated geometry and fixed-length arm IK remain in `src/features/character/scene`.
 
