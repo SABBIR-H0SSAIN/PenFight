@@ -63,6 +63,7 @@ export function createUiStore() {
     labAlgo: "astar",
     live: null,
     hintBusy: false,
+    hintReady: false,
     hintAvailable: false,
     benchmark: { running: false, status: "", result: null },
     settings: { ...defaultSettings },

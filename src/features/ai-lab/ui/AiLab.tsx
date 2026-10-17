@@ -25,6 +25,7 @@ export function AiLab() {
       "labAlgo",
       "mode",
       "hintBusy",
+      "hintReady",
       "hintAvailable",
     ]);
   const [tab, setTab] = useState<keyof typeof tabs>("moves");
@@ -34,7 +35,9 @@ export function AiLab() {
     <aside id="lab" hidden={!state.labOpen} aria-label="AI Lab">
       <div className="lh">
         <AlgorithmSelect
-          label="Lab algorithm"
+          label={
+            state.mode === "aivai" ? "AI A lab algorithm" : "Lab algorithm"
+          }
           value={state.labAlgo}
           onChange={(value) => {
             if (value !== "auto") services.controller?.changeAlgorithm(value);
@@ -96,7 +99,7 @@ export function AiLab() {
               <div id="hintBtns">
                 <button
                   className="btn"
-                  disabled={state.hintBusy}
+                  disabled={!state.hintReady || state.hintBusy}
                   onClick={() => void services.controller?.requestHint()}
                 >
                   Suggest my move

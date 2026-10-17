@@ -16,6 +16,8 @@ export function GameHud() {
       "goal",
       "speed",
       "labOpen",
+      "hintReady",
+      "hintBusy",
     ]);
   const { settings, setSettings } = useGamePreferences();
   if (state.mode === "menu") return null;
@@ -64,6 +66,7 @@ export function GameHud() {
         {state.mode === "train" && (
           <button
             className="tb"
+            disabled={!state.hintReady || state.hintBusy}
             onClick={() => void services.controller?.requestHint()}
           >
             <span className="tb-icon" aria-hidden="true">

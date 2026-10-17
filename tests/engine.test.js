@@ -36,3 +36,39 @@ test("separate sessions do not share physics settings", () => {
   a.setRealism(false);
   assert.deepEqual(b.shoot(state.pens, 0, action), before);
 });
+
+for (const pen of Object.keys(createGameEngine().PENS)) {
+  test(`${pen} collisions and recorded playback remain finite at both friction limits`, () => {
+    const engine = createGameEngine();
+    for (const friction of [0.8, 1.1]) {
+      engine.setFriction(friction);
+      for (const realism of [true, false]) {
+        engine.setRealism(realism);
+        for (const opponent of Object.keys(engine.PENS)) {
+          const state = engine.newState([pen, opponent], engine.rng(42), 0);
+          const before = structuredClone(state);
+          const shot = engine.shoot(
+            state.pens,
+            0,
+            { ang: -Math.PI / 2, pow: 1, off: 0.8, surge: pen === "premium" },
+            { record: 1 / 60, maxT: 4.8 },
+          );
+          assert.deepEqual(state, before);
+          assert.ok([-1, 0, 1].includes(shot.out));
+          assert.ok(shot.rec.length > 1);
+          let last = -1;
+          for (const frame of shot.rec) {
+            assert.ok(frame.t >= last);
+            last = frame.t;
+            for (const p of frame.p)
+              for (const key of ["x", "y", "z", "vx", "vy", "a", "roll"])
+                assert.ok(
+                  Number.isFinite(p[key]),
+                  `${pen}/${opponent}: ${key}`,
+                );
+          }
+        }
+      }
+    }
+  });
+}

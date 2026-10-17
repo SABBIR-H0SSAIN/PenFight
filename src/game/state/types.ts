@@ -111,6 +111,7 @@ export interface GameUiState {
   labAlgo: Algorithm;
   live: LiveDecision | null;
   hintBusy: boolean;
+  hintReady: boolean;
   hintAvailable: boolean;
   benchmark: {
     running: boolean;

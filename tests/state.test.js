@@ -101,3 +101,72 @@ test("persisted removed algorithms fall back to supported menu defaults", async 
   assert.equal(preferences.ai.a, "astar");
   assert.equal(preferences.ai.b, "mcts");
 });
+
+test("completed benchmarks alternate the starting player and publish final totals", async () => {
+  const ui = createUiStore(),
+    starts = [];
+  const engine = createGameEngine();
+  engine.playRound = function* (configs, options) {
+    starts.push(options.first);
+    options.onDecision(0, 8);
+    options.onDecision(1, 12);
+    yield { roundInProgress: true, turns: 1 };
+    return { winner: options.first, how: "out", turns: 2 };
+  };
+  await createBenchmarkRunner(engine, ui).run("dfs", "astar", 4, "advanced");
+  assert.deepEqual(starts, [0, 1, 0, 1]);
+  assert.equal(ui.get().benchmark.running, false);
+  assert.deepEqual(ui.get().benchmark.result.wins, [2, 2]);
+  assert.deepEqual(ui.get().benchmark.result.averageMs, [8, 12]);
+  assert.equal(ui.get().benchmark.result.done, 4);
+  assert.equal(ui.get().benchmark.result.outs, 4);
+});
+
+test("corrupt saved settings and unavailable storage recover to valid playable preferences", async (t) => {
+  const { hydrateState } = await import("../src/game/state/preferences.js");
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  t.after(() => {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  });
+  const engine = createGameEngine();
+  for (const value of [
+    null,
+    [],
+    "bad",
+    {
+      vol: 900,
+      friction: -9,
+      quality: "bad",
+      tableSurface: "bad",
+      name: "a".repeat(40),
+    },
+  ]) {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: { getItem: () => JSON.stringify(value) },
+    });
+    const ui = createUiStore();
+    hydrateState(engine, ui);
+    assert.ok(ui.get().settings.vol >= 0 && ui.get().settings.vol <= 1);
+    assert.ok(
+      ui.get().settings.friction >= 0.8 && ui.get().settings.friction <= 1.1,
+    );
+    assert.ok(ui.get().settings.name.length <= 14);
+    assert.ok(
+      ["auto", "low", "medium", "high"].includes(ui.get().settings.quality),
+    );
+    assert.ok(
+      ["oak", "maple", "walnut"].includes(ui.get().settings.tableSurface),
+    );
+  }
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem() {
+        throw new Error("Storage disabled");
+      },
+    },
+  });
+  assert.doesNotThrow(() => hydrateState(engine, createUiStore()));
+});

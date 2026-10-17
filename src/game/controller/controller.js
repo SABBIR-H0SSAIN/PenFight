@@ -16,7 +16,8 @@ export function createController({
     clamp = PF.clamp,
     scope = createScope();
   let disposed = false,
-    labDirty = true;
+    labDirty = true,
+    hintRequest = 0;
   const benchmark = createBenchmarkRunner(PF, ui);
   const viewport = () => ({
     width: canvas.clientWidth || innerWidth,
@@ -65,6 +66,7 @@ export function createController({
     Snd.setAmbience(SET.amb);
     PF.setRealism(SET.real);
     PF.setFriction(SET.friction);
+    if (G.play && !G.play.replay) G.camMode = SET.follow ? "follow" : "game";
     const quality =
       SET.quality === "auto" ? (isMobile ? "medium" : "high") : SET.quality;
     if (World.quality !== quality) World.setQuality(quality);
@@ -96,8 +98,13 @@ export function createController({
   const nextFrame = () => scope.nextFrame();
   function cancelAll() {
     G.token++;
+    clearHint();
     G.timers.splice(0).forEach((t) => t.res());
     if (G.input) {
+      if (G.input.active) {
+        G.input.active = false;
+        releasePointer(G.input);
+      }
       const r = G.input.res;
       G.input = null;
       r(null);
@@ -106,7 +113,7 @@ export function createController({
     G.play?.onEnd?.(true);
     G.play = null;
     G.replaying = false;
-    ui.set({ replaying: false });
+    ui.set({ replaying: false, hintReady: false });
     World.showAim(0, 0, 0, 0, false);
     World.showHints(null);
   }
@@ -499,12 +506,14 @@ export function createController({
   }
   function humanAim(who) {
     return new Promise((res) => {
+      clearHint();
       G.input = { res, active: false, who: who || 0 };
       showBanner(null);
       ui.set({
         tipVisible: SET.guide,
         flickCorner: chooseFlickCorner(),
         hintAvailable: false,
+        hintReady: G.mode === "train" && who === 0,
       });
     });
   }
@@ -556,7 +565,8 @@ export function createController({
   scope.listen(canvas, "pointerdown", (e) => {
     Snd.init();
     const I = G.input;
-    if (!I || I.active || G.paused) return;
+    if (!I || I.active || G.paused || e.button !== 0 || e.isPrimary === false)
+      return;
     const p = pointerTable(e);
     if (!p) return;
     const pen = G.state.pens[I.who],
@@ -567,6 +577,7 @@ export function createController({
       cx = pen.x + ax * tc,
       cy = pen.y + ay * tc;
     if (Math.hypot(p.x - cx, p.y - cy) > 10) return;
+    clearHint();
     I.active = true;
     I.off = clamp(tc / (pen.L / 2), -0.9, 0.9);
     I.c = { x: cx, y: cy };
@@ -610,7 +621,7 @@ export function createController({
         }
       });
     }
-    ui.set({ tipVisible: false });
+    ui.set({ tipVisible: false, hintReady: false });
     updateAim();
     e.preventDefault();
   });
@@ -650,13 +661,21 @@ export function createController({
   function endAim(e) {
     const I = G.input;
     if (!I || !I.active || (e && e.pointerId !== I.pid)) return;
+    if (G.paused) {
+      cancelAim(e);
+      return;
+    }
+    const release = pointerTable(e);
+    if (release) I.p = release;
     const v = aimVec(I);
     I.active = false;
+    releasePointer(I);
     World.showAim(0, 0, 0, 0, false);
     ui.set({ power: null });
     students[I.who].goal = null;
     if (v.pow < 0.07) {
       retract(I.who);
+      ui.set({ hintReady: G.mode === "train" && I.who === 0 });
       return;
     } // cancelled
     const act = {
@@ -675,8 +694,27 @@ export function createController({
     G.input = null;
     r({ act, contact: I.c, fromPull: true });
   }
+  function releasePointer(input) {
+    try {
+      canvas.releasePointerCapture(input.pid);
+    } catch {}
+  }
+  function cancelAim(event) {
+    const input = G.input;
+    if (!input?.active || (event && event.pointerId !== input.pid)) return;
+    input.active = false;
+    releasePointer(input);
+    World.showAim(0, 0, 0, 0, false);
+    retract(input.who);
+    ui.set({
+      power: null,
+      tipVisible: SET.guide && !G.paused,
+      hintReady: G.mode === "train" && input.who === 0 && !G.paused,
+    });
+  }
   scope.listen(canvas, "pointerup", endAim);
-  scope.listen(canvas, "pointercancel", endAim);
+  scope.listen(canvas, "pointercancel", cancelAim);
+  scope.listen(canvas, "lostpointercapture", cancelAim);
 
   /* ------------------------------------------------------------------- AI */
 
@@ -688,7 +726,7 @@ export function createController({
       S = students[who];
     S.thinking = true;
     S.setEmotion("think", 0);
-    setThink(who, cfg, null);
+    setThink(who, cfg);
     World.showHints(null);
     const gen = PF.decide(G.state, who, cfg),
       t0 = performance.now();
@@ -698,7 +736,7 @@ export function createController({
       r = gen.next();
       if (r.done) break;
       G.live = r.value;
-      setThink(who, cfg, r.value);
+      setThink(who, cfg);
       labDirty = true;
       if (location.hash === "#fast") continue;
       if ((snd++ & 7) === 0) Snd.think();
@@ -732,14 +770,8 @@ export function createController({
     cfg.lastInfo = out.info;
     return { act, contact: contactOf(G.state.pens[who], act.off || 0), cfg };
   }
-  function setThink(who, cfg, live) {
-    const nm = G.names[who],
-      st = live && live.stats ? live.stats : null;
-    const thinking =
-      nm +
-      " is thinking · " +
-      PF.ALGOS[cfg.algo] +
-      (st && st.sims ? " · " + st.sims.toLocaleString() + " sims" : "");
+  function setThink(who, cfg) {
+    const thinking = G.names[who] + " is thinking · " + PF.ALGOS[cfg.algo];
     ui.set({ thinking });
   }
 
@@ -979,7 +1011,6 @@ export function createController({
     if (G.live && G.labOpen)
       ui.set({
         live: structuredClone(G.live),
-        labAlgo: G.live.algo || ui.get().labAlgo,
       });
   }
   function syncSurge() {
@@ -1076,7 +1107,7 @@ export function createController({
       );
       student.react = null;
     });
-    const algorithm = (options.ai[1] || options.ai[0])?.algo || "astar";
+    const algorithm = options.ai[mode === "aivai" ? 0 : 1]?.algo || "astar";
     ui.set({
       mode,
       speed: G.speed,
@@ -1103,14 +1134,22 @@ export function createController({
     begin(mode, buildMatchOptions(PF, SET, ui.get().preferences, mode));
   }
   function pause() {
-    if (G.mode === "menu" || ui.get().end) return;
+    if (G.mode === "menu" || G.paused || ui.get().end) return;
     Snd.init();
     G.paused = true;
-    ui.set({ paused: true });
+    cancelAim();
+    clearHint();
+    ui.set({ paused: true, hintReady: false });
   }
   function resume() {
     G.paused = false;
-    ui.set({ paused: false, fromPause: false, menuVisible: false });
+    Snd.init();
+    ui.set({
+      paused: false,
+      fromPause: false,
+      menuVisible: false,
+      hintReady: G.mode === "train" && G.input?.who === 0 && !G.input.active,
+    });
   }
   function settings() {
     G.paused = true;
@@ -1128,9 +1167,15 @@ export function createController({
     } else ui.set({ view: "main" });
   }
   function changeAlgorithm(algo) {
+    clearHint();
     ui.set({ labAlgo: algo });
     const side = G.mode === "aivai" ? 0 : 1;
     if (G.ai[side]) G.ai[side].algo = algo;
+    if (G.mode === "aivai") {
+      G.names = G.ai.map((cfg) => PF.SHORT[cfg.algo]);
+      if (G.names[0] === G.names[1]) G.names[1] += " (2)";
+      syncBoard();
+    }
   }
   scope.listen(window, "keydown", (event) => {
     if (/INPUT|SELECT|TEXTAREA/.test(event.target?.tagName || "")) return;
@@ -1146,44 +1191,72 @@ export function createController({
     )
       setLab(!G.labOpen);
   });
+  scope.listen(window, "blur", pause);
+  scope.listen(document, "visibilitychange", () => {
+    if (document.hidden) pause();
+  });
+  function clearHint() {
+    hintRequest++;
+    G.hint = null;
+    World.showHints(null);
+    ui.set({ hintBusy: false, hintAvailable: false });
+  }
   async function requestHint() {
-    const tok = G.token;
-    if (!G.state || !G.humans[0] || !G.input || ui.get().hintBusy) return;
+    if (
+      G.mode !== "train" ||
+      G.paused ||
+      G.input?.who !== 0 ||
+      G.input.active ||
+      ui.get().hintBusy
+    )
+      return;
+    const tok = G.token,
+      input = G.input,
+      request = ++hintRequest;
+    const current = () =>
+      tok === G.token &&
+      request === hintRequest &&
+      G.input === input &&
+      !input.active &&
+      !G.paused;
     const algo = ui.get().labAlgo;
     const cfg = { algo, noise: null, mem: PF.newMemory("expert") };
     const gen = PF.decide(G.state, 0, Object.assign({}, cfg, { seed: 5 }));
     let r;
     ui.set({ hintBusy: true });
-    for (;;) {
-      r = gen.next();
-      if (r.done) break;
-      G.live = r.value;
-      labDirty = true;
-      await nextFrame();
-      if (tok !== G.token || !G.input) {
-        ui.set({ hintBusy: false });
-        return;
+    try {
+      for (;;) {
+        if (!current()) return;
+        r = gen.next();
+        if (r.done) break;
+        G.live = r.value;
+        labDirty = true;
+        await nextFrame();
       }
+      if (!current()) return;
+      G.live = r.value.info;
+      G.hint = r.value;
+      labDirty = true;
+      ui.set({ hintBusy: false });
+      ui.set({ hintAvailable: true });
+      const pen = G.state.pens[0];
+      World.showHints(
+        (r.value.info.moves || []).slice(0, 5).map((m) => {
+          const c = contactOf(pen, m.act.off || 0);
+          return {
+            x: c.x - Math.cos(m.act.ang) * 0,
+            y: c.y,
+            ang: m.act.ang,
+            pow: m.act.pow,
+            score: m.score,
+            selected: m.selected,
+          };
+        }),
+      );
+    } finally {
+      gen.return();
+      if (request === hintRequest) ui.set({ hintBusy: false });
     }
-    G.live = r.value.info;
-    G.hint = r.value;
-    labDirty = true;
-    ui.set({ hintBusy: false });
-    ui.set({ hintAvailable: true });
-    const pen = G.state.pens[0];
-    World.showHints(
-      (r.value.info.moves || []).slice(0, 5).map((m) => {
-        const c = contactOf(pen, m.act.off || 0);
-        return {
-          x: c.x - Math.cos(m.act.ang) * 0,
-          y: c.y,
-          ang: m.act.ang,
-          pow: m.act.pow,
-          score: m.score,
-          selected: m.selected,
-        };
-      }),
-    );
   }
   /* ------------------------------------------------------------- main loop */
   const perf = { acc: 0, n: 0, low: 0, cool: 0 };
@@ -1296,12 +1369,12 @@ export function createController({
       return requestHint();
     },
     applyHint() {
-      if (!G.input || !G.hint) return;
+      if (G.paused || G.input?.who !== 0 || G.input.active || !G.hint) return;
       const action = { ...G.hint.action },
         input = G.input;
       G.input = null;
-      ui.set({ hintAvailable: false });
-      World.showHints(null);
+      clearHint();
+      ui.set({ hintReady: false });
       input.res({
         act: action,
         contact: contactOf(G.state.pens[0], action.off || 0),
