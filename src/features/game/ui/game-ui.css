@@ -1,6 +1,14 @@
 /* Shared notebook UI: keep these rules independent of OS light/dark preference. */
 .game-runtime {
   color-scheme: light;
+  --fg: #263e54;
+  --muted: #626c77;
+  --line: #bcb9a4;
+  --chip: #f5ead2;
+  --accent: #a64743;
+  --accent-fg: #fffaf1;
+  --good: #237645;
+  color: var(--fg);
 }
 .sr-only {
   position: absolute;
@@ -69,6 +77,30 @@
 #lab .lh select {
   width: 100%;
 }
+#bottom {
+  padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+}
+#fps {
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+}
+#lab .lh,
+#lab .stats,
+#lab .info,
+#lab .tabs {
+  flex-shrink: 0;
+}
+#lab .info {
+  max-height: 100px;
+  overflow-y: auto;
+}
+#lab .lh {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.benchmark-actions {
+  flex-wrap: wrap;
+}
 @media (min-width: 761px) and (orientation: landscape) {
   .lab-on #hud {
     right: 420px;
@@ -90,6 +122,10 @@
   .lab-on #think {
     left: calc((100% - 420px) / 2);
     max-width: calc(100% - 452px);
+  }
+  .lab-on #banner {
+    left: calc((100% - 420px) / 2);
+    width: calc(100% - 452px);
   }
 }
 @media (max-width: 1100px) and (min-width: 761px) and (orientation: landscape) {
@@ -126,5 +162,58 @@
   #pause .card h2,
   #end .card h2 {
     font-size: 38px;
+  }
+  #lab .info {
+    max-height: 56px;
+  }
+  #lab .lh {
+    padding: 7px 10px 7px 20px;
+  }
+  #lab .stats {
+    padding: 5px 10px 5px 20px;
+  }
+  #lab .info {
+    padding: 5px 10px 5px 20px;
+  }
+  #lab .pane {
+    padding-left: 20px;
+  }
+  #flick-guide {
+    width: clamp(160px, 42vw, 220px);
+  }
+  #flick-guide #tip {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  #menu input,
+  #menu select {
+    font-size: 16px;
+  }
+}
+@media (max-height: 500px) {
+  #lab {
+    overflow-y: auto;
+  }
+  #lab .info {
+    max-height: 56px;
+  }
+  #lab .pane {
+    flex: 1 0 180px;
+  }
+  #pause .card,
+  #end .card {
+    transform: none;
+  }
+  #banner {
+    top: 66%;
+  }
+  #banner.on #bnT {
+    font-size: 28px;
+  }
+  #banner.on #bnS {
+    font-size: 16px;
+  }
+  .lab-on #think {
+    visibility: hidden;
   }
 }

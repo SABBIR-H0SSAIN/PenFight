@@ -32,7 +32,8 @@ a {
   font: inherit;
 }
 .app-shell {
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -96,7 +97,8 @@ a {
   position: absolute;
   z-index: 2;
   right: 14px;
-  bottom: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  min-height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 9px;
   padding: 9px 12px;
@@ -106,6 +108,21 @@ a {
 }
 .fullscreen-button:hover {
   background: #282e28;
+}
+.game-area:fullscreen {
+  width: 100vw;
+  height: 100dvh;
+}
+.fullscreen-status {
+  position: absolute;
+  z-index: 40;
+  right: 14px;
+  bottom: 62px;
+  max-width: calc(100% - 28px);
+  padding: 8px 12px;
+  background: #fffbed;
+  color: #263e54;
+  border-radius: 6px;
 }
 @media (max-width: 640px) {
   .app-header {

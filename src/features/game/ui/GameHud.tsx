@@ -41,7 +41,8 @@ export function GameHud() {
           </span>
         </div>
         <small>
-          Round {state.round} · first to {state.goal}
+          Round {state.round} ·{" "}
+          {state.mode === "train" ? "Practice" : `first to ${state.goal}`}
         </small>
       </div>
       <div className="tools" role="toolbar" aria-label="Game controls">

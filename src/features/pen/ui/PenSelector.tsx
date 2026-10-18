@@ -76,6 +76,7 @@ export function PenSelector({
                 className="pc-input"
                 type="color"
                 value={color}
+                onInput={(event) => changeColor(event.currentTarget.value)}
                 onChange={(event) => changeColor(event.target.value)}
               />
             </label>
