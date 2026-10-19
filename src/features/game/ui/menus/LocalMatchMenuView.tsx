@@ -12,11 +12,7 @@ export function LocalMatchMenuView() {
   const update = (patch: Partial<typeof value>) =>
     setPreferences({ ...preferences, pvp: { ...value, ...patch } });
   return (
-    <MenuPage view="pvp" title="Human vs Human" eyebrow="FRIENDLY MATCH">
-      <p className="lead">
-        Take turns on the same screen. The camera turns to face whoever is
-        flicking.
-      </p>
+    <MenuPage view="pvp" title="Human vs Human">
       <div className="two">
         <label className="f">
           Player 1

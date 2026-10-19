@@ -21,9 +21,13 @@ export function GameDialog({
         : null;
     panel.current?.querySelector<HTMLButtonElement>("button")?.focus();
     return () => {
-      if (previous?.isConnected) previous.focus();
+      const menuButton = document.getElementById("game-menu-button");
+      if (id === "pause" && menuButton && !menuButton.closest("[inert]"))
+        menuButton.focus();
+      else if (previous?.isConnected && !previous.closest("[inert]"))
+        previous.focus();
     };
-  }, []);
+  }, [id]);
   return (
     <div
       id={id}

@@ -14,7 +14,7 @@ export function AiBattleMenuView() {
   const update = (patch: Partial<typeof value>) =>
     setPreferences({ ...preferences, ai: { ...value, ...patch } });
   return (
-    <MenuPage view="aivai" title="AI Battle" eyebrow="AI SHOWDOWN">
+    <MenuPage view="aivai" title="AI Battle">
       <div className="two">
         <label className="f">
           AI A
@@ -55,9 +55,6 @@ export function AiBattleMenuView() {
           />
         </label>
       </div>
-      <p className="lead">
-        Choose a pen for each AI. They can use the same model or different pens.
-      </p>
       <div className="two ai-pen-columns">
         <section className="ai-pen-panel">
           <h3>AI A pen</h3>

@@ -14,7 +14,7 @@ const toggles = [
 export function SettingsMenuView() {
   const { settings, setSettings } = useGamePreferences();
   return (
-    <MenuPage view="settings" title="Settings" eyebrow="CUSTOMISE YOUR GAME">
+    <MenuPage view="settings" title="Settings">
       <label className="f">
         Player name
         <input
@@ -47,7 +47,7 @@ export function SettingsMenuView() {
             })
           }
         >
-          <option value="auto">Auto (adapts to frame rate)</option>
+          <option value="auto">Auto</option>
           <option value="high">High</option>
           <option value="medium">Medium</option>
           <option value="low">Low</option>
@@ -63,9 +63,9 @@ export function SettingsMenuView() {
             })
           }
         >
-          <option value="oak">Classic oak · warm classroom wood</option>
-          <option value="maple">Light maple · pale satin grain</option>
-          <option value="walnut">Dark walnut · rich brown grain</option>
+          <option value="oak">Classic oak</option>
+          <option value="maple">Light maple</option>
+          <option value="walnut">Dark walnut</option>
         </select>
       </label>
       <label className="sw">
@@ -82,8 +82,7 @@ export function SettingsMenuView() {
         />
       </label>
       <div className="mute">
-        80% = more sliding · 100% = original grip · 110% = less sliding. Applies
-        to both players and AI.
+        Lower friction means more sliding. Applies to both pens.
       </div>
       {toggles.map(([key, label]) => (
         <label className="sw" key={key}>

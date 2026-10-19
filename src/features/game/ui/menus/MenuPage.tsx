@@ -5,21 +5,15 @@ import type { MenuView } from "@/game/state/types";
 export function MenuPage({
   view,
   title,
-  eyebrow,
   children,
 }: {
   view: MenuView;
   title: string;
-  eyebrow: string;
   children: ReactNode;
 }) {
   const services = useGameServices();
   return (
     <div className="view" data-view={view}>
-      <div className="exercise-top">
-        <span>{eyebrow}</span>
-        <span>✎</span>
-      </div>
       <button
         className="back"
         type="button"

@@ -11,7 +11,7 @@ export function VersusMenuView() {
   const { preferences, setPreferences } = useGamePreferences();
   const value = preferences.vs;
   return (
-    <MenuPage view="vs" title="Human vs AI" eyebrow="YOUR NEXT CHALLENGE">
+    <MenuPage view="vs" title="Human vs AI">
       <h3>Opponent</h3>
       <DifficultySelect
         label="Opponent difficulty"
@@ -29,9 +29,6 @@ export function VersusMenuView() {
           setPreferences({ ...preferences, vs: { ...value, ...pen } })
         }
       />
-      <p className="mute">
-        Both players use this pen model. The AI gets a different colour.
-      </p>
       <button
         className="mbtn primary"
         onClick={() => services.controller?.start("vs")}

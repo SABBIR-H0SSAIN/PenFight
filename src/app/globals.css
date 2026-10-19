@@ -38,8 +38,8 @@ a {
   flex-direction: column;
 }
 .app-header {
-  height: 54px;
-  flex: 0 0 54px;
+  height: 42px;
+  flex: 0 0 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -55,11 +55,12 @@ a {
   text-decoration: none;
   font-weight: 750;
   letter-spacing: 0.02em;
+  font-size: 15px;
 }
 .app-brand-mark {
   display: grid;
-  width: 27px;
-  height: 27px;
+  width: 23px;
+  height: 23px;
   place-items: center;
   border-radius: 8px;
   background: #f3d999;
@@ -67,13 +68,13 @@ a {
 }
 .app-caption {
   color: #b4b7ae;
-  font-size: 12px;
+  font-size: 13px;
 }
 .game-area {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(100dvh - 54px);
+  height: calc(100dvh - 42px);
   background: #20231f;
 }
 .game-runtime {
@@ -98,10 +99,11 @@ a {
   z-index: 2;
   right: 14px;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  min-height: 40px;
+  min-height: 38px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 9px;
-  padding: 9px 12px;
+  padding: 6px 9px;
+  font-size: 13px;
   background: rgba(20, 23, 20, 0.82);
   color: #fff;
   cursor: pointer;
@@ -126,15 +128,15 @@ a {
 }
 @media (max-width: 640px) {
   .app-header {
-    height: 46px;
-    flex-basis: 46px;
+    height: 38px;
+    flex-basis: 38px;
     padding-inline: 12px;
   }
   .app-caption {
     display: none;
   }
   .game-area {
-    height: calc(100dvh - 46px);
+    height: calc(100dvh - 38px);
   }
 }
 

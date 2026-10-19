@@ -23,13 +23,9 @@ export function GameHud() {
   if (state.mode === "menu") return null;
   return (
     <div id="hud" data-human={state.human ? 1 : 0}>
-      <div className="brand">
-        Pen Fight AI Arena<small>{state.title}</small>
-      </div>
       <div className="score" aria-live="polite">
         <div className="score-heading">
           <span>✎ MATCH SCORE</span>
-          <span>CLASS 07</span>
         </div>
         <div className="row">
           <span className="nm" title={state.names[0]}>
@@ -58,10 +54,24 @@ export function GameHud() {
             >
               {[1, 2, 4].map((speed) => (
                 <option value={speed} key={speed}>
-                  x{speed}
+                  {speed}×
                 </option>
               ))}
             </select>
+            <svg
+              className="speed-chevron"
+              viewBox="0 0 12 12"
+              width="12"
+              height="12"
+              aria-hidden="true"
+            >
+              <path
+                d="m3 4.5 3 3 3-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+            </svg>
           </label>
         )}
         {state.mode === "train" && (
@@ -78,13 +88,15 @@ export function GameHud() {
         )}
         <button
           className="tb"
+          aria-label="Follow camera"
+          title="Follow the moving pen"
           aria-pressed={settings.follow}
           onClick={() => setSettings({ follow: !settings.follow })}
         >
           <span className="tb-icon" aria-hidden="true">
             ◉
           </span>
-          <span>Follow cam</span>
+          <span>Follow</span>
         </button>
         {state.mode !== "pvp" && (
           <button
@@ -98,7 +110,15 @@ export function GameHud() {
             <span>AI Lab</span>
           </button>
         )}
-        <button className="tb" onClick={() => services.controller?.pause()}>
+        <button
+          id="game-menu-button"
+          className="tb"
+          type="button"
+          aria-label="Game menu"
+          aria-haspopup="dialog"
+          aria-controls="pause"
+          onClick={() => services.controller?.pause()}
+        >
           <span className="tb-icon" aria-hidden="true">
             ☰
           </span>

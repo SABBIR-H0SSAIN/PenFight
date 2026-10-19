@@ -9,9 +9,6 @@ export function GameHeader() {
         </span>
         <span>Pen Fight Arena</span>
       </Link>
-      <span className="app-caption">
-        Classroom challenge · play, experiment, and build
-      </span>
     </header>
   );
 }

@@ -12,11 +12,7 @@ export function TrainingMenuView() {
   const { preferences, setPreferences } = useGamePreferences();
   const value = preferences.train;
   return (
-    <MenuPage view="train" title="Training Mode" eyebrow="EXPERIMENT NOTEBOOK">
-      <p className="lead">
-        Practice with the AI Lab open. Ask any algorithm for a hint on your own
-        turn.
-      </p>
+    <MenuPage view="train" title="Training Mode">
       <h3>Opponent accuracy</h3>
       <DifficultySelect
         label="Training opponent accuracy"

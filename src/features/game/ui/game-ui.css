@@ -51,7 +51,20 @@
   outline-offset: 2px;
 }
 #hud .score {
-  width: clamp(290px, 28vw, 370px);
+  width: clamp(240px, 24vw, 300px);
+  min-width: 0;
+  padding: 5px 10px;
+  transform: none;
+}
+#hud .brand {
+  font-size: 13px;
+}
+#hud .brand small {
+  font-size: 12px;
+}
+#hud .score-heading {
+  font-size: 10px;
+  letter-spacing: 0.05em;
 }
 #hud .score .row {
   display: grid;
@@ -65,7 +78,80 @@
   overflow-wrap: anywhere;
   overflow: visible;
   text-overflow: clip;
-  line-height: 1.1;
+  font: 600 15px/1.2 var(--body);
+}
+#hud .score .pt {
+  font: 700 24px/1.1 var(--body);
+}
+#hud .score small {
+  font: 500 12px/1.25 var(--body);
+}
+#hud .tb,
+#bottom .tb,
+#speedBox select {
+  font: 600 14px/1.25 var(--body);
+  min-height: 40px;
+  padding: 6px 8px;
+  gap: 4px;
+}
+#hud .tb-icon,
+#bottom .tb-icon {
+  font-size: 14px;
+}
+#hud .tb::after,
+#bottom .tb::after,
+#hud .tb[aria-pressed="true"]::before,
+#bottom .tb[aria-pressed="true"]::before {
+  display: none;
+}
+#speedBox {
+  position: relative;
+  flex: none;
+}
+#hud #speedBox select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 64px;
+  height: 40px;
+  min-height: 40px;
+  padding: 6px 23px 6px 9px;
+  line-height: 1.25;
+}
+.speed-chevron {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+#bottom #turn {
+  font: 600 14px/1.3 var(--body);
+  padding: 6px 12px;
+  transform: none;
+}
+#think {
+  font: 500 14px/1.3 var(--body);
+  padding: 5px 8px;
+}
+#flick-guide {
+  width: 150px;
+  left: 12px;
+  bottom: 60px;
+}
+#flick-guide #pw {
+  padding: 6px 8px;
+}
+#flick-guide #pw .t {
+  font: 500 13px/1.3 var(--body);
+}
+#flick-guide #pw .b {
+  height: 7px;
+}
+#banner.on #bnT {
+  font-size: clamp(24px, 5vw, 36px);
+}
+#banner.on #bnS {
+  font-size: 14px;
 }
 #speedBox select {
   color-scheme: light;
@@ -78,7 +164,7 @@
   width: 100%;
 }
 #bottom {
-  padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
 #fps {
   bottom: calc(22px + env(safe-area-inset-bottom, 0px));
@@ -110,7 +196,7 @@
     display: none;
   }
   .lab-on #hud .score {
-    width: min(310px, 100%);
+    width: min(260px, 100%);
     min-width: 0;
   }
   .lab-on #hud .tools {
@@ -118,6 +204,9 @@
   }
   .lab-on #bottom {
     right: 420px;
+  }
+  .lab-on .camera-controls {
+    right: 432px;
   }
   .lab-on #think {
     left: calc((100% - 420px) / 2);
@@ -147,11 +236,29 @@
   }
 }
 @media (max-width: 760px), (orientation: portrait) {
+  #hud {
+    gap: 5px;
+    padding: 8px;
+  }
+  #hud .tools {
+    gap: 5px;
+  }
+  #bottom {
+    align-items: flex-start;
+  }
+  #bottom #turn {
+    max-width: calc(100vw - 145px);
+    font-size: 14px;
+  }
+  #flick-guide {
+    bottom: 100px;
+  }
   #hud .score {
-    width: min(340px, calc(100vw - 27px));
+    width: min(280px, 100%);
   }
   .lab-on #bottom,
-  .lab-on #think {
+  .lab-on #think,
+  .lab-on .camera-controls {
     visibility: hidden;
   }
   #pause .card,
@@ -161,7 +268,7 @@
   }
   #pause .card h2,
   #end .card h2 {
-    font-size: 38px;
+    font-size: 26px;
   }
   #lab .info {
     max-height: 56px;
@@ -178,17 +285,65 @@
   #lab .pane {
     padding-left: 20px;
   }
-  #flick-guide {
-    width: clamp(160px, 42vw, 220px);
-  }
-  #flick-guide #tip {
-    padding: 8px 10px;
-    font-size: 14px;
-  }
   #menu input,
   #menu select {
     font-size: 16px;
   }
+}
+
+/* A compact type scale for the notebook menus and panels. */
+#menu .title {
+  font-size: clamp(30px, 5vw, 42px);
+}
+#menu .lead {
+  font-size: 16px;
+  line-height: 1.35;
+}
+#menu .mbtn > span:first-child {
+  font-size: 20px;
+}
+#menu .mbtn {
+  font-size: 18px;
+}
+#menu .mbtn small {
+  font-size: 13px;
+}
+#menu h3 {
+  font-size: 18px;
+}
+#menu .chips button span {
+  font-size: 16px;
+}
+#menu .chips button small {
+  font-size: 12px;
+}
+#menu .f,
+#menu .sw {
+  font-size: 14px;
+}
+#lab .tabs button,
+#lab .btn {
+  font: 600 13px/1.3 var(--body);
+  min-height: 34px;
+}
+#pause .card h2,
+#end .card h2 {
+  font-size: 26px;
+}
+#pause .card .mbtn,
+#end .card .mbtn {
+  font: 600 16px/1.3 var(--body);
+  min-height: 44px;
+  width: 100%;
+  justify-content: center;
+}
+#pause .card,
+#end .card {
+  transform: none;
+}
+#pause .card p,
+#end .card p {
+  font: 400 15px/1.5 var(--body);
 }
 @media (max-height: 500px) {
   #lab {
