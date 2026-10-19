@@ -1,0 +1,156 @@
+{
+  "retrieved": "2026-10-19",
+  "sources": {
+    "flick": {
+      "name": "pen flick 2.wav",
+      "author": "mywhats",
+      "source": "https://freesound.org/people/mywhats/sounds/175526/",
+      "download": "https://cdn.freesound.org/previews/175/175526_1084891-hq.mp3",
+      "license": "CC0-1.0",
+      "file": "flick.mp3",
+      "sourceSha256": "1bb15eb54b625b7994554ff1d26c4175b4942a51e5791ee6538b769daa06eeef"
+    },
+    "floor": {
+      "name": "Pen drop on floor.wav",
+      "author": "shark510",
+      "source": "https://freesound.org/people/shark510/sounds/346386/",
+      "download": "https://cdn.freesound.org/previews/346/346386_4487893-hq.mp3",
+      "license": "CC0-1.0",
+      "file": "floor.mp3",
+      "sourceSha256": "6dc0b568e1b7214d1035c9bc28cac1f258fbd298c664b256d4aaeadaafd6c89e"
+    },
+    "slide": {
+      "name": "Slide",
+      "author": "Mokozuz",
+      "source": "https://freesound.org/people/Mokozuz/sounds/370737/",
+      "download": "https://cdn.freesound.org/previews/370/370737_6827920-hq.mp3",
+      "license": "CC0-1.0",
+      "file": "slide.mp3",
+      "sourceSha256": "55f326ee1877cee17719fc91ae5d034462a2fb8b1097c0f4020c9dc39f828212"
+    },
+    "fan": {
+      "name": "Electric fan #1",
+      "author": "Joseph SARDIN / BigSoundBank",
+      "source": "https://bigsoundbank.com/electric-fan-1-s0078.html",
+      "download": "https://bigsoundbank.com/UPLOAD/bwf-en/0078.wav",
+      "license": "CC0-1.0",
+      "file": "fan-alt.wav",
+      "sourceSha256": "719a268f568863167537c9ea4cd97601a0a0679ae7dd5f84082009ae8da80c94"
+    },
+    "classroom": {
+      "name": "Classroom Ambiance",
+      "author": "rcrossley",
+      "source": "https://soundbible.com/1561-Classroom-Ambiance.html",
+      "download": "https://soundbible.com/mp3/Classroom%20Ambiance-SoundBible.com-922889313.mp3",
+      "license": "Public Domain (source declaration)",
+      "file": "room-alt.mp3",
+      "sourceSha256": "15d0fd37b18690eb97673b01efb7e6eabed011c9204924ff54d8134f3411f22f"
+    }
+  },
+  "assets": [
+    {
+      "file": "pen-flick.wav",
+      "source": "flick",
+      "sourceStart": 0.045,
+      "sourceEnd": 0.25,
+      "highpassHz": 100,
+      "lowpassHz": 10000,
+      "loopCrossfadeSeconds": 0,
+      "sampleRate": 32000,
+      "duration": 0.205,
+      "bytes": 13164,
+      "sha256": "6ec8fa1debdc41e3bac404034846dcbaa7c5ca566b4e46641b8b188eef694a09"
+    },
+    {
+      "file": "pen-contact-a.wav",
+      "source": "floor",
+      "sourceStart": 0.272,
+      "sourceEnd": 0.385,
+      "highpassHz": 140,
+      "lowpassHz": 7000,
+      "loopCrossfadeSeconds": 0,
+      "sampleRate": 32000,
+      "duration": 0.113,
+      "bytes": 7276,
+      "sha256": "1fb6e2480fd011814f862e0b75cef1a0d27291d89285a4b580aae368f1a5082a"
+    },
+    {
+      "file": "pen-contact-b.wav",
+      "source": "floor",
+      "sourceStart": 0.395,
+      "sourceEnd": 0.505,
+      "highpassHz": 140,
+      "lowpassHz": 6200,
+      "loopCrossfadeSeconds": 0,
+      "sampleRate": 32000,
+      "duration": 0.11,
+      "bytes": 7084,
+      "sha256": "05971a5371ed3b104d3361bd42b3070cf803e2e820a1fa0697a3f187f496638a"
+    },
+    {
+      "file": "pen-contact-c.wav",
+      "source": "floor",
+      "sourceStart": 0.555,
+      "sourceEnd": 0.705,
+      "highpassHz": 140,
+      "lowpassHz": 7600,
+      "loopCrossfadeSeconds": 0,
+      "sampleRate": 32000,
+      "duration": 0.15,
+      "bytes": 9644,
+      "sha256": "928b8d11944a3633b1b2256aaac6a424b8417617e7cb087288c103da2d5fa36e"
+    },
+    {
+      "file": "pen-drop.wav",
+      "source": "floor",
+      "sourceStart": 0.268,
+      "sourceEnd": 1.02,
+      "highpassHz": 100,
+      "lowpassHz": 10000,
+      "loopCrossfadeSeconds": 0,
+      "sampleRate": 32000,
+      "duration": 0.752,
+      "bytes": 48172,
+      "sha256": "a7926dba9972e6c4016bbb5a6a4ff325c5ebb91a51230aad7837e1d94a5583da"
+    },
+    {
+      "file": "pen-slide-loop.wav",
+      "source": "slide",
+      "sourceStart": 0.85,
+      "sourceEnd": 2.78,
+      "highpassHz": 230,
+      "lowpassHz": 3600,
+      "loopCrossfadeSeconds": 0.18,
+      "sampleRate": 32000,
+      "duration": 1.75,
+      "bytes": 112044,
+      "sha256": "6516c3e7081270d5d6ddcb16a5a9053085f62c186ddf2db36cb2202976cef4ea"
+    },
+    {
+      "file": "fan-loop.wav",
+      "source": "fan",
+      "sourceStart": 0.5,
+      "sourceEnd": 8.5,
+      "highpassHz": 45,
+      "lowpassHz": 1800,
+      "loopCrossfadeSeconds": 0.4,
+      "sampleRate": 24000,
+      "duration": 7.6,
+      "bytes": 364844,
+      "sha256": "80482bd8d24addf4553479da1a0997759209db1801556f92dddea33d8d183342"
+    },
+    {
+      "file": "classroom-loop.wav",
+      "source": "classroom",
+      "sourceStart": 4,
+      "sourceEnd": 16,
+      "highpassHz": 200,
+      "lowpassHz": 1500,
+      "loopCrossfadeSeconds": 0.65,
+      "sampleRate": 24000,
+      "duration": 11.35,
+      "bytes": 544844,
+      "sha256": "d0b6a3941dd1c66bca43d2388f403cfa15acf27e27a8f573d5408cda50de2e20"
+    }
+  ]
+}

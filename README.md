@@ -152,6 +152,8 @@ Tests cover all supported algorithms, depth cutoffs, bidirectional frontier meet
 
 ## Assets
 
+Gameplay uses local recorded pen foley, movement-driven friction, and quiet classroom/fan loops. Sources, licences and edits are documented in [audio credits](public/audio/CREDITS.md); the playback implementation lives in `src/game/audio/`.
+
 The Matador High School model is served from `public/models/pens/`. Its provenance and handling notes are recorded in the [pen asset guide](public/models/pens/README.md).
 
 The current characters use procedural geometry and do not require external head scans or skin textures.

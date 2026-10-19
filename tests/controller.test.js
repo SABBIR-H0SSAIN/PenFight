@@ -197,3 +197,32 @@ test("a real knock-off updates the score, finishes the match, and Play again res
   assert.deepEqual(f.ui.get().scores, [0, 0]);
   assert.equal(f.ui.get().round, 1);
 });
+
+test("floor impact audio follows paused simulation time and cannot leak into the menu", async (t) => {
+  const f = controllerFixture(t);
+  f.ui.set({ settings: { ...f.ui.get().settings, replay: false } });
+  f.controller.start("pvp");
+  await f.advance(100);
+  const p = f.point();
+  f.pointer("pointerdown", p);
+  f.pointer("pointerup", { x: p.x + 600, y: p.y });
+  for (
+    let i = 0;
+    i < 100 && !f.soundCalls.some((c) => c.method === "flick");
+    i++
+  )
+    await f.advance();
+  assert.ok(f.soundCalls.some((c) => c.method === "flick"));
+  f.controller.pause();
+  await f.advance(200);
+  assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, 0);
+  f.controller.resume();
+  await f.advance(200);
+  assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, 1);
+  assert.ok(f.soundCalls.some((c) => c.method === "motion"));
+  f.controller.openMenu();
+  const count = f.soundCalls.filter((c) => c.method === "drop").length;
+  await f.advance(200);
+  assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, count);
+  assert.ok(f.soundCalls.some((c) => c.method === "reset"));
+});

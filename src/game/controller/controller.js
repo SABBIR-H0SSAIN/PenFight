@@ -98,6 +98,7 @@ export function createController({
   const nextFrame = () => scope.nextFrame();
   function cancelAll() {
     G.token++;
+    Snd.reset();
     clearHint();
     G.timers.splice(0).forEach((t) => t.res());
     if (G.input) {
@@ -265,9 +266,24 @@ export function createController({
       const range = opts.replay
         ? replayWindow(res.events, fullDuration)
         : { start: 0, end: fullDuration };
-      const events = res.events.filter(
-        (e) => (e.type === "hit" || e.type === "out") && e.t >= range.start,
-      );
+      // Landings use simulation time, so pause, replay and AI speed stay in sync.
+      const events = res.events
+        .flatMap((event) =>
+          event.type === "out"
+            ? [
+                event,
+                {
+                  ...event,
+                  type: "landing",
+                  t: Math.min(fullDuration, event.t + 0.38),
+                },
+              ]
+            : event.type === "hit"
+              ? [event]
+              : [],
+        )
+        .filter((event) => event.t >= range.start)
+        .sort((a, b) => a.t - b.t);
       const impact =
         opts.slow !== false && SET.slowmo && !opts.replay
           ? events.find((e) => e.type === "hit" && e.speed > 90)?.t
@@ -283,6 +299,7 @@ export function createController({
         speed: opts.speed || 1,
         replay: !!opts.replay,
         onEnd: (c) => {
+          Snd.stopMotion();
           G.play = null;
           G.curFrame = null;
           resolve(c);
@@ -290,6 +307,10 @@ export function createController({
         frameVel: null,
       };
     });
+  }
+  function soundPan(x, y) {
+    cam.updateMatrixWorld(true);
+    return clamp(new V3(x - 30, 1, y - 50).project(cam).x * 0.65, -0.8, 0.8);
   }
   function updatePlay(dt) {
     const P = G.play;
@@ -302,7 +323,10 @@ export function createController({
     while (P.ei < P.events.length && P.events[P.ei].t <= P.t) {
       const e = P.events[P.ei++];
       if (e.type === "hit") {
-        Snd.hit(e.speed);
+        const pen =
+          G.pens.find((kind) => kind === "heavy" || kind === "premium") ||
+          G.pens[P.who];
+        Snd.hit(e.speed, { pen, pan: soundPan(e.x, e.y) });
         G.shake = Math.max(G.shake, clamp(e.speed / 220, 0.1, 0.8));
         const w = P.who;
         if (e.speed > 60 && !P.replay) {
@@ -310,11 +334,18 @@ export function createController({
           students[1 - w].setEmotion("surprise", 1.2);
           students[w].setEmotion("smug", 1.4);
         }
-      } else if (e.type === "out") {
-        Snd.scratch(0.6);
-        scope.timeout(Snd.drop, 380);
+      } else if (e.type === "landing") {
+        Snd.drop({ pen: G.pens[e.who], pan: soundPan(e.x, e.y) });
       }
     }
+    Snd.motion(
+      fr.p.map((pen, i) => ({
+        speed: Math.hypot(pen.vx, pen.vy),
+        out: pen.out,
+        pen: G.pens[i],
+        pan: soundPan(pen.x, pen.y),
+      })),
+    );
     for (let i = 0; i < 2; i++) {
       const s = fr.p[i];
       World.setPen(i, s, P.t);
@@ -464,7 +495,10 @@ export function createController({
     ui.set({ tipVisible: false });
     await flickAnim(who, act, contact, fromPull);
     chk(tok);
-    Snd.flick(act.pow);
+    Snd.flick(act.pow, {
+      pen: G.pens[who],
+      pan: soundPan(contact.x, contact.y),
+    });
     const res = PF.shoot(st.pens, who, act, {
       record: REC,
       afterOut: 0.45,
@@ -730,8 +764,7 @@ export function createController({
     World.showHints(null);
     const gen = PF.decide(G.state, who, cfg),
       t0 = performance.now();
-    let r,
-      snd = 0;
+    let r;
     for (;;) {
       r = gen.next();
       if (r.done) break;
@@ -739,7 +772,6 @@ export function createController({
       setThink(who, cfg);
       labDirty = true;
       if (location.hash === "#fast") continue;
-      if ((snd++ & 7) === 0) Snd.think();
       await nextFrame();
       while (G.paused) {
         await nextFrame();
@@ -1039,6 +1071,7 @@ export function createController({
     benchmark.stop(false);
     cancelAll();
     G.paused = false;
+    Snd.setPaused(false);
     G.mode = "menu";
     G.camMode = "menu";
     G.labOpen = false;
@@ -1079,6 +1112,7 @@ export function createController({
     World.drawBoard();
   }
   function begin(mode, options) {
+    Snd.setPaused(false);
     Snd.init();
     benchmark.stop(false);
     cancelAll();
@@ -1137,12 +1171,14 @@ export function createController({
     if (G.mode === "menu" || G.paused || ui.get().end) return;
     Snd.init();
     G.paused = true;
+    Snd.setPaused(true);
     cancelAim();
     clearHint();
     ui.set({ paused: true, hintReady: false });
   }
   function resume() {
     G.paused = false;
+    Snd.setPaused(false);
     Snd.init();
     ui.set({
       paused: false,
@@ -1342,6 +1378,7 @@ export function createController({
     changeAlgorithm,
     showView(view) {
       Snd.init();
+      Snd.page();
       ui.set({ view });
     },
     toggleLab() {
@@ -1358,7 +1395,11 @@ export function createController({
       }
     },
     skipReplay() {
-      if (G.play?.replay) G.play.t = G.play.dur;
+      if (G.play?.replay) {
+        G.play.t = G.play.dur;
+        G.play.ei = G.play.events.length;
+        Snd.stopMotion();
+      }
     },
     setSpeed(speed) {
       G.speed = speed;

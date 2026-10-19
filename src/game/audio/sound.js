@@ -1,198 +1,329 @@
-/* Procedural Web Audio: classroom ambience, fan, murmur, flick, impact, desk vibration, win/lose. */
-export function createSound() {
+import { AUDIO_ASSETS, CONTACT_SOUNDS, materialProfile } from "./catalog.js";
+
+/** Recorded tabletop foley, with per-session ownership and a quiet offline fallback. */
+export function createSound({
+  createContext = () =>
+    new (window.AudioContext || window.webkitAudioContext)({
+      latencyHint: "interactive",
+    }),
+  fetchAudio = (...args) => fetch(...args),
+  random = Math.random,
+} = {}) {
   let ctx = null,
     master = null,
-    ambGain = null,
-    noiseBuf = null,
-    vol = 0.7,
+    effects = null,
+    ambience = null,
+    abort = null,
+    generation = 0,
+    volume = 0.7,
     ambOn = true,
-    murmurTimer = 0;
-  function init() {
-    if (ctx) {
-      if (ctx.state === "suspended") ctx.resume();
-      return;
-    }
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch {
-      ctx = null;
-      return;
-    }
-    master = ctx.createGain();
-    master.gain.value = vol;
-    master.connect(ctx.destination);
-    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const d = noiseBuf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    ambGain = ctx.createGain();
-    ambGain.gain.value = ambOn ? 1 : 0;
-    ambGain.connect(master);
-    ambience();
+    paused = false,
+    ready = Promise.resolve(),
+    fallback = null,
+    previousContact = -1;
+  const buffers = new Map(),
+    loading = new Map(),
+    voices = new Set(),
+    ambientLoops = new Map(),
+    motionLoops = new Map();
+  const clamp = (v, min, max) =>
+    Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : min;
+
+  function ramp(param, value, seconds = 0.035) {
+    param.setTargetAtTime(value, ctx.currentTime, seconds);
   }
-  function src(loop) {
-    const s = ctx.createBufferSource();
-    s.buffer = noiseBuf;
-    s.loop = !!loop;
-    return s;
+  function resumeContext() {
+    if (ctx && ctx.state !== "running" && ctx.state !== "closed")
+      void ctx.resume().catch(() => {});
   }
-  function ambience() {
-    // room tone
-    const a = src(true),
-      f = ctx.createBiquadFilter(),
-      g = ctx.createGain();
-    f.type = "bandpass";
-    f.frequency.value = 520;
-    f.Q.value = 0.35;
-    g.gain.value = 0.05;
-    a.connect(f);
-    f.connect(g);
-    g.connect(ambGain);
-    a.start();
-    // ceiling fan: low rumble with blade-pass amplitude modulation
-    const b = src(true),
-      lf = ctx.createBiquadFilter(),
-      fg = ctx.createGain(),
-      lfo = ctx.createOscillator(),
-      lg = ctx.createGain();
-    lf.type = "lowpass";
-    lf.frequency.value = 170;
-    fg.gain.value = 0.045;
-    lfo.frequency.value = 3.1;
-    lg.gain.value = 0.02;
-    lfo.connect(lg);
-    lg.connect(fg.gain);
-    b.connect(lf);
-    lf.connect(fg);
-    fg.connect(ambGain);
-    b.start();
-    lfo.start();
-    // distant students talking: syllable-like bursts through a vowel-ish filter
-    const murmur = () => {
-      if (!ctx) return;
-      const t = ctx.currentTime,
-        n = 3 + Math.floor(Math.random() * 4),
-        f0 = 300 + Math.random() * 500;
-      for (let i = 0; i < n; i++) {
-        const s = src(false),
-          bp = ctx.createBiquadFilter(),
-          g2 = ctx.createGain(),
-          st = t + i * (0.11 + Math.random() * 0.08);
-        bp.type = "bandpass";
-        bp.frequency.value = f0 * (0.8 + Math.random() * 0.8);
-        bp.Q.value = 3;
-        g2.gain.setValueAtTime(0, st);
-        g2.gain.linearRampToValueAtTime(0.05, st + 0.03);
-        g2.gain.linearRampToValueAtTime(0, st + 0.12);
-        s.connect(bp);
-        bp.connect(g2);
-        g2.connect(ambGain);
-        s.start(st, Math.random());
-        s.stop(st + 0.14);
+  function load(key) {
+    if (loading.has(key)) return loading.get(key);
+    const context = ctx,
+      version = generation,
+      signal = abort.signal;
+    const pending = (async () => {
+      try {
+        const response = await fetchAudio(AUDIO_ASSETS[key], {
+          signal,
+          cache: "force-cache",
+        });
+        if (!response.ok) return;
+        const data = await response.arrayBuffer();
+        if (version !== generation || signal.aborted) return;
+        const buffer = await context.decodeAudioData(data);
+        if (version !== generation || signal.aborted) return;
+        buffers.set(key, buffer);
+        if (key === "fan" || key === "classroom") startAmbience();
+      } catch {
+        // Asset/network/decoder failures must never interrupt a match.
       }
-      murmurTimer = setTimeout(murmur, 700 + Math.random() * 2600);
+    })();
+    loading.set(key, pending);
+    return pending;
+  }
+  function init() {
+    if (!ctx) {
+      try {
+        ctx = createContext();
+        master = ctx.createGain();
+        effects = ctx.createGain();
+        ambience = ctx.createGain();
+        master.gain.value = volume;
+        ambience.gain.value = ambOn ? 1 : 0;
+        effects.connect(master);
+        ambience.connect(master);
+        master.connect(ctx.destination);
+        abort = new AbortController();
+        ready = Promise.all(
+          Object.keys(AUDIO_ASSETS)
+            .filter((key) => !["fan", "classroom"].includes(key) || ambOn)
+            .map(load),
+        ).then(() => {});
+      } catch {
+        if (ctx) void ctx.close().catch(() => {});
+        ctx = master = effects = ambience = null;
+        return Promise.resolve();
+      }
+    }
+    if (!paused) resumeContext();
+    return ready;
+  }
+  function voice(
+    buffer,
+    {
+      gain,
+      rate = 1,
+      pan = 0,
+      cutoff = 7000,
+      loop = false,
+      ambient = false,
+      offset = 0,
+    },
+  ) {
+    const source = ctx.createBufferSource(),
+      filter = ctx.createBiquadFilter(),
+      level = ctx.createGain(),
+      panner = ctx.createStereoPanner?.();
+    source.buffer = buffer;
+    source.loop = loop;
+    source.playbackRate.value = rate;
+    filter.type = "lowpass";
+    filter.frequency.value = cutoff;
+    level.gain.value = loop ? 0 : gain;
+    source.connect(filter);
+    filter.connect(level);
+    if (panner) {
+      panner.pan.value = clamp(pan, -0.8, 0.8);
+      level.connect(panner);
+      panner.connect(ambient ? ambience : effects);
+    } else level.connect(ambient ? ambience : effects);
+    let stopped = false;
+    const handle = {
+      source,
+      level,
+      panner,
+      ambient,
+      loop,
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        try {
+          source.stop();
+        } catch {}
+        source.disconnect();
+        filter.disconnect();
+        level.disconnect();
+        panner?.disconnect();
+        voices.delete(handle);
+      },
     };
-    murmur();
+    source.onended = () => handle.stop();
+    voices.add(handle);
+    source.start(0, offset);
+    if (loop) ramp(level.gain, gain, ambient ? 0.5 : 0.025);
+    return handle;
   }
-  function burst(dur, type, freq, q, gain, when, slideTo) {
-    if (!ctx) return;
-    const t = ctx.currentTime + (when || 0);
-    const s = src(false),
-      f = ctx.createBiquadFilter(),
-      g = ctx.createGain();
-    f.type = type;
-    f.frequency.setValueAtTime(freq, t);
-    if (slideTo) f.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
-    f.Q.value = q;
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-    s.connect(f);
-    f.connect(g);
-    g.connect(master);
-    s.start(t, Math.random());
-    s.stop(t + dur + 0.02);
+  function startAmbience() {
+    if (!ctx || !ambOn) return;
+    for (const [key, gain, cutoff] of [
+      ["fan", 0.075, 1600],
+      ["classroom", 0.022, 1900],
+    ]) {
+      const buffer = buffers.get(key);
+      if (!buffer || ambientLoops.has(key)) continue;
+      ambientLoops.set(
+        key,
+        voice(buffer, {
+          gain,
+          cutoff,
+          loop: true,
+          ambient: true,
+          offset: random() * buffer.duration,
+        }),
+      );
+    }
   }
-  function tone(freq, dur, type, gain, when, slideTo) {
-    if (!ctx) return;
-    const t = ctx.currentTime + (when || 0),
-      o = ctx.createOscillator(),
-      g = ctx.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g);
-    g.connect(master);
-    o.start(t);
-    o.stop(t + dur + 0.03);
+  function contactKey() {
+    previousContact =
+      (previousContact +
+        1 +
+        Math.floor(random() * (CONTACT_SOUNDS.length - 1))) %
+      CONTACT_SOUNDS.length;
+    return CONTACT_SOUNDS[previousContact];
+  }
+  function fallbackClick(gain, pan, rate) {
+    if (!fallback) {
+      fallback = ctx.createBuffer(
+        1,
+        Math.ceil(ctx.sampleRate * 0.09),
+        ctx.sampleRate,
+      );
+      const samples = fallback.getChannelData(0);
+      let smoothed = 0;
+      for (let i = 0; i < samples.length; i++) {
+        smoothed = smoothed * 0.45 + (random() * 2 - 1) * 0.55;
+        samples[i] =
+          smoothed *
+          Math.exp(-i / (ctx.sampleRate * 0.012)) *
+          Math.min(1, i / 24);
+      }
+    }
+    voice(fallback, { gain: gain * 0.3, pan, rate, cutoff: 4800 });
+  }
+  function play(key, { gain = 0.4, pan = 0, pen, rate = 1 } = {}) {
+    if (!ctx || paused || ctx.state !== "running" || volume === 0) return;
+    const transient = [...voices].filter((v) => !v.loop);
+    if (transient.length >= 16) transient[0].stop();
+    const profile = materialProfile(pen),
+      pitch = profile.rate * rate * (0.97 + random() * 0.06),
+      buffer = buffers.get(key);
+    if (buffer)
+      voice(buffer, {
+        gain: gain * profile.gain,
+        pan,
+        rate: pitch,
+        cutoff: profile.cutoff,
+      });
+    else fallbackClick(gain, pan, pitch);
+  }
+  function stopMotion() {
+    motionLoops.forEach((v) => v.stop());
+    motionLoops.clear();
+  }
+  function reset() {
+    stopMotion();
+    [...voices].filter((v) => !v.ambient).forEach((v) => v.stop());
   }
   return {
     init,
-    dispose() {
-      clearTimeout(murmurTimer);
-      const previous = ctx;
-      ctx = null;
-      if (previous) void previous.close();
-      master = null;
-      ambGain = null;
-      noiseBuf = null;
+    reset,
+    stopMotion,
+    setPaused(on) {
+      paused = !!on;
+      if (paused) {
+        reset();
+        if (ctx && ctx.state !== "closed") void ctx.suspend().catch(() => {});
+      } else resumeContext();
     },
-    setVolume(v) {
-      vol = v;
-      if (master) master.gain.value = v;
+    setVolume(value) {
+      volume = clamp(value, 0, 1);
+      if (master) ramp(master.gain, volume);
+      if (!volume) reset();
     },
     setAmbience(on) {
-      ambOn = on;
-      if (ambGain) ambGain.gain.value = on ? 1 : 0;
+      ambOn = !!on;
+      if (!ctx) return;
+      ramp(ambience.gain, ambOn ? 1 : 0, 0.15);
+      if (ambOn) {
+        void load("fan");
+        void load("classroom");
+        startAmbience();
+      } else {
+        ambientLoops.forEach((v) => v.stop());
+        ambientLoops.clear();
+      }
     },
-    flick(p) {
-      burst(0.06, "highpass", 2200, 0.7, 0.25 + 0.3 * p);
-      tone(180 + 120 * p, 0.05, "triangle", 0.12);
+    motion(pens) {
+      const buffer = buffers.get("slide");
+      if (!ctx || paused || ctx.state !== "running" || !volume || !buffer) {
+        stopMotion();
+        return;
+      }
+      pens.forEach(({ speed, out, pen, pan }, i) => {
+        if (out || !Number.isFinite(speed) || speed < 3) {
+          motionLoops.get(i)?.stop();
+          motionLoops.delete(i);
+          return;
+        }
+        const profile = materialProfile(pen),
+          gain = Math.min(0.13, speed / 1400) * profile.gain;
+        if (!motionLoops.has(i))
+          motionLoops.set(
+            i,
+            voice(buffer, {
+              gain,
+              pan,
+              loop: true,
+              cutoff: profile.cutoff * 0.65,
+              rate: profile.rate,
+              offset: random() * buffer.duration,
+            }),
+          );
+        const current = motionLoops.get(i);
+        ramp(current.level.gain, gain);
+        ramp(
+          current.source.playbackRate,
+          profile.rate * (0.72 + Math.min(speed, 160) / 300),
+        );
+        if (current.panner) ramp(current.panner.pan, clamp(pan, -0.8, 0.8));
+      });
     },
-    hit(speed) {
-      const k = Math.min(1, speed / 160);
-      burst(0.09, "bandpass", 2600 + 900 * k, 4, 0.35 + 0.4 * k);
-      tone(900 + 500 * k, 0.07, "square", 0.07 + 0.06 * k, 0, 420);
-      this.desk(k * 0.7);
+    flick(power, options) {
+      play("flick", { ...options, gain: 0.24 + clamp(power, 0, 1.6) * 0.34 });
     },
-    desk(k) {
-      tone(70 + 30 * Math.random(), 0.35, "sine", 0.22 * (k || 0.5), 0.01, 48);
-      burst(0.2, "lowpass", 300, 0.6, 0.12 * (k || 0.5));
+    hit(speed, options) {
+      play(contactKey(), {
+        ...options,
+        gain: 0.14 + (clamp(speed, 0, 180) / 180) * 0.47,
+      });
     },
-    drop() {
-      tone(120, 0.18, "sine", 0.25, 0.05, 60);
-      burst(0.12, "lowpass", 500, 0.5, 0.2, 0.05);
+    desk(amount = 0.3) {
+      play(contactKey(), {
+        gain: 0.12 + clamp(amount, 0, 1) * 0.15,
+        rate: 0.85,
+      });
     },
-    scratch(k) {
-      burst(0.25 + 0.3 * k, "bandpass", 3200, 1.2, 0.05, 0, 1800);
+    drop(options) {
+      play("drop", { ...options, gain: 0.5 });
     },
     tick() {
-      tone(1400, 0.03, "square", 0.04);
+      play("flick", { gain: 0.09, rate: 1.1 });
     },
-    think() {
-      tone(520, 0.05, "sine", 0.05);
-      tone(660, 0.05, "sine", 0.05, 0.07);
+    page() {
+      play("contactA", { gain: 0.075, rate: 1.15 });
     },
     win() {
-      [523, 659, 784, 1047].forEach((f, i) =>
-        tone(f, 0.26, "triangle", 0.18, i * 0.11),
-      );
-      tone(1047, 0.7, "triangle", 0.16, 0.5);
+      play(contactKey(), { gain: 0.22, rate: 1.08 });
     },
     lose() {
-      [392, 349, 311, 262].forEach((f, i) =>
-        tone(f, 0.3, "sawtooth", 0.09, i * 0.17),
-      );
+      play(contactKey(), { gain: 0.14, rate: 0.85 });
     },
-    round(w) {
-      if (w) {
-        tone(660, 0.12, "triangle", 0.15);
-        tone(880, 0.2, "triangle", 0.15, 0.1);
-      } else {
-        tone(300, 0.2, "triangle", 0.14);
-        tone(220, 0.25, "triangle", 0.12, 0.12);
-      }
+    round(won) {
+      play(contactKey(), { gain: won ? 0.18 : 0.12 });
+    },
+    dispose() {
+      generation++;
+      abort?.abort();
+      [...voices].forEach((v) => v.stop());
+      ambientLoops.clear();
+      motionLoops.clear();
+      buffers.clear();
+      loading.clear();
+      const previous = ctx;
+      ctx = master = effects = ambience = fallback = abort = null;
+      paused = false;
+      if (previous && previous.state !== "closed")
+        void previous.close().catch(() => {});
     },
   };
 }
