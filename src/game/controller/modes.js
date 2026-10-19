@@ -42,7 +42,7 @@ export function buildMatchOptions(PF, settings, preferences, mode) {
         : L.algo;
     return {
       humans: [true, false],
-      names: [settings.name || "You", L.ai],
+      names: [settings.name || "You", "AI"],
       pens: [selection.pen, selection.pen],
       penColors: versusPenColors(PF, selection),
       goal: mode === "train" ? 99 : 3,

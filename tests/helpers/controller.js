@@ -53,8 +53,8 @@ export function controllerFixture(t) {
     getBoundingClientRect: () => ({
       left: 0,
       top: 0,
-      width: 1000,
-      height: 700,
+      width: canvas.clientWidth,
+      height: canvas.clientHeight,
     }),
     setPointerCapture: (pid) => captured.add(pid),
     releasePointerCapture: (pid) => captured.delete(pid),
@@ -90,7 +90,10 @@ export function controllerFixture(t) {
     setQuality(q) {
       this.quality = q;
     },
-    resize() {},
+    resize(width, height) {
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    },
     drawBoard() {},
     showAim() {},
     showHints(value) {
@@ -145,7 +148,10 @@ export function controllerFixture(t) {
     const p = new THREE.Vector3(pens[who].x - 30, 0, pens[who].y - 50).project(
       world.camera,
     );
-    return { x: (p.x + 1) * 500, y: (1 - p.y) * 350 };
+    return {
+      x: ((p.x + 1) * canvas.clientWidth) / 2,
+      y: ((1 - p.y) * canvas.clientHeight) / 2,
+    };
   }
   function pointer(type, point, extra = {}) {
     const event = Object.assign(new Event(type, { cancelable: true }), {
@@ -165,6 +171,7 @@ export function controllerFixture(t) {
     world,
     window,
     document,
+    canvas,
     advance,
     point,
     pointer,

@@ -4,6 +4,13 @@ import type { SceneQuality } from "../scene/types";
 export type Algorithm = keyof typeof import("../ai/catalog.js").ALGORITHMS;
 export type GameMode = "menu" | "pvp" | "vs" | "train" | "aivai";
 export type MenuView = "main" | "pvp" | "vs" | "train" | "aivai" | "settings";
+export type CameraPreset = "overview" | "top" | "side" | "player";
+export interface CameraAngle {
+  preset: CameraPreset | "custom";
+  azimuth: number;
+  elevation: number;
+  zoom: number;
+}
 export interface PenSelection {
   pen: PenKind;
   colors: Partial<Record<PenKind, string>>;
@@ -102,8 +109,7 @@ export interface GameUiState {
   thinking: string | null;
   banner: { title: string; subtitle: string } | null;
   replaying: boolean;
-  tipVisible: boolean;
-  flickCorner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  camera: CameraAngle;
   power: { value: number; surge: boolean } | null;
   surge: { visible: boolean; available: boolean; enabled: boolean };
   fpsLabel: string;

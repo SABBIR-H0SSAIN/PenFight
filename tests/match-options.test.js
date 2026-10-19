@@ -31,6 +31,7 @@ test("human and AI use identical pen physics and contrasting colours for every s
           );
           assert.equal(match.ai[1].level, difficulty);
           assert.deepEqual(match.humans, [true, false]);
+          assert.deepEqual(match.names, ["Tester", "AI"]);
         }
       }
     }

@@ -2,6 +2,39 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { controllerFixture } from "./helpers/controller.js";
 
+test("simulation speeds accept only supported multipliers", async (t) => {
+  const f = controllerFixture(t);
+  f.controller.start("aivai");
+  for (const speed of [1, 2, 4]) {
+    f.controller.setSpeed(speed);
+    assert.equal(f.ui.get().speed, speed);
+  }
+  for (const speed of [0, -1, 3, NaN, Infinity, undefined])
+    f.controller.setSpeed(speed);
+  assert.equal(f.ui.get().speed, 4);
+  f.controller.dispose();
+  f.controller.setSpeed(2);
+  assert.equal(f.ui.get().speed, 4);
+});
+
+test("Escape opens and closes the game menu from a focused input without repeat toggling", async (t) => {
+  const f = controllerFixture(t);
+  f.controller.start("pvp");
+  await f.advance(100);
+  const key = (repeat = false) => {
+    const event = new Event("keydown", { cancelable: true });
+    Object.assign(event, { key: "Escape", repeat });
+    Object.defineProperty(event, "target", { value: { tagName: "INPUT" } });
+    f.window.dispatchEvent(event);
+  };
+  key();
+  assert.equal(f.ui.get().paused, true);
+  key(true);
+  assert.equal(f.ui.get().paused, true);
+  key();
+  assert.equal(f.ui.get().paused, false);
+});
+
 for (const interruption of [
   "pointercancel",
   "lostpointercapture",

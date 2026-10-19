@@ -1,5 +1,10 @@
 import type { GameUiStore } from "@/game/state/store";
-import type { Algorithm, GameMode, MenuView } from "@/game/state/types";
+import type {
+  Algorithm,
+  CameraPreset,
+  GameMode,
+  MenuView,
+} from "@/game/state/types";
 import type { Difficulty } from "@/game/contracts";
 import type { SceneWorld } from "@/game/scene/types";
 export interface GameController {
@@ -16,6 +21,12 @@ export interface GameController {
   toggleSurge(): void;
   skipReplay(): void;
   setSpeed(speed: number): void;
+  setCameraPreset(preset: CameraPreset): void;
+  setCameraAngle(azimuth: number, elevation: number): void;
+  setCameraRotation(azimuth: number): void;
+  setCameraTilt(elevation: number): void;
+  setCameraZoom(zoom: number): void;
+  resetCamera(): void;
   requestHint(): Promise<void>;
   applyHint(): void;
   dispose(): void;
