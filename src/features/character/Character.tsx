@@ -2,7 +2,11 @@
 import { useLayoutEffect } from "react";
 import { createCharacterFeature } from "./scene/character-scene.js";
 import { disposeObjectTree } from "@/game/scene/dispose.js";
-import { useGameServices } from "@/features/game/runtime/GameProvider";
+import { updateFurnitureSurface } from "@/features/furniture/scene/furniture.js";
+import {
+  useGameServices,
+  useGameState,
+} from "@/features/game/runtime/GameProvider";
 import type { CharacterAppearance, CharacterSlot } from "./types";
 export interface CharacterProps {
   slot: CharacterSlot;
@@ -11,6 +15,8 @@ export interface CharacterProps {
 /** Mounts one student, including its articulated arms, and applies optional appearance props. */
 export function Character({ slot, appearance }: CharacterProps) {
   const { world } = useGameServices();
+  const { settings } = useGameState(["settings"]);
+  const surface = settings.tableSurface;
   useLayoutEffect(() => {
     if (!world.initialized) return;
     const feature = createCharacterFeature(world.deps);
@@ -26,6 +32,10 @@ export function Character({ slot, appearance }: CharacterProps) {
       disposeObjectTree(character.arms);
     };
   }, [world, slot]);
+  useLayoutEffect(() => {
+    const character = world.students[slot];
+    if (character) updateFurnitureSurface(character.group, world.deps, surface);
+  }, [world, slot, surface]);
   useLayoutEffect(() => {
     const character = world.students[slot];
     if (!character || !appearance) return;

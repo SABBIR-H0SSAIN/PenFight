@@ -22,7 +22,17 @@ export function sceneFixture() {
   );
   const cvs = (width, height) => ({ width, height, getContext: () => context });
   const sceneRoot = new THREE.Group();
-  return { engine, world, sceneRoot, deps: { ...world.deps, cvs, sceneRoot } };
+  return {
+    engine,
+    world,
+    sceneRoot,
+    deps: {
+      ...world.deps,
+      cvs,
+      sceneRoot,
+      loadFurnitureTexture: () => new THREE.Texture(),
+    },
+  };
 }
 export function meshesOf(root) {
   const meshes = [];

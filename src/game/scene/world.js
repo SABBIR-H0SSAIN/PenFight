@@ -456,7 +456,7 @@ export function createWorld(PF) {
     g.closePath();
     g.stroke();
     g.font = "24px " + FONT;
-    g.fillText("Monitor : Rinku", 730, 492);
+    g.fillText("AI Lab", 730, 492);
     R.boardTex.needsUpdate = true;
   }
   R.drawBoard = drawBoard;

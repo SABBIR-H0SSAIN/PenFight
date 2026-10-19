@@ -57,8 +57,8 @@ export const PEN_DEFINITIONS = {
   },
   matador_hs: {
     name: "Matador High School",
-    len: 19.5,
-    r: 0.51,
+    len: 21,
+    r: 0.9,
     mass: 0.95,
     mu: 0.31,
     e: 0.6,

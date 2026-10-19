@@ -1,7 +1,7 @@
 import { Box3, Vector3 } from "three";
 
-/** Uses the supplied cap-on-back GLB, preserving its proportions and printing. */
-export function buildMatadorHighSchool({ g, L, chosen, template }) {
+/** Fits the supplied cap-on-back GLB to its playable length and barrel radius. */
+export function buildMatadorHighSchool({ g, L, r, chosen, template }) {
   if (!template)
     throw new Error("The Matador High School model has not loaded.");
   const model = template.clone(true);
@@ -41,7 +41,11 @@ export function buildMatadorHighSchool({ g, L, chosen, template }) {
   const bounds = new Box3().setFromObject(model);
   const scale = L / (bounds.max.x - bounds.min.x);
   const center = bounds.getCenter(new Vector3());
-  model.scale.setScalar(scale);
+  // The authored model is much thinner than the other game pens. Fit its
+  // cross-section separately so it stays visible and matches the physics radius.
+  // Rotation above maps source Z onto world Y; local Y/Z use the same scale.
+  const radialScale = r / Math.max(-bounds.min.y, bounds.max.y);
+  model.scale.set(scale, radialScale, radialScale);
   // Keep the barrel axis on Y/Z=0; the cap clip is intentionally asymmetric.
   model.position.x = -center.x * scale;
   model.name = "matador-hi-school-glb";

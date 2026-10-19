@@ -8,6 +8,156 @@ import { createCharacterFeature } from "../src/features/character/scene/characte
 import { createTableFeature } from "../src/features/table/scene/table-scene.js";
 import { createClassroomFeature } from "../src/features/classroom/scene/classroom-scene.js";
 import { disposeObjectTree } from "../src/game/scene/dispose.js";
+import {
+  createFurnitureLibrary,
+  updateFurnitureSurface,
+} from "../src/features/furniture/scene/furniture.js";
+
+test("changing furniture finish preserves the character rig and releases the previous wood material", () => {
+  const { deps } = sceneFixture();
+  const character = createCharacterFeature(deps).makeStudent(0);
+  const seat = character.group.getObjectByName("chair-seat");
+  const geometry = seat.geometry,
+    original = seat.material[0];
+  let releases = 0;
+  original.map.addEventListener("dispose", () => releases++);
+  updateFurnitureSurface(character.group, deps, "maple");
+  assert.equal(seat.geometry, geometry);
+  assert.equal(seat.material[0].map.name, "original-school-bench-maple");
+  assert.equal(
+    character.group.getObjectByName("chair-back").material[0],
+    seat.material[0],
+  );
+  assert.equal(releases, 1);
+  const material = seat.material[0];
+  updateFurnitureSurface(character.group, deps, "maple");
+  assert.equal(
+    seat.material[0],
+    material,
+    "unchanged finish does not allocate another material",
+  );
+  character.update(1 / 60, 1);
+  assert.ok(character.head.position.toArray().every(Number.isFinite));
+  disposeObjectTree(character.group);
+  disposeObjectTree(character.arms);
+});
+
+test("furniture keeps playable bounds and distant desk/chair silhouettes", () => {
+  const { deps, sceneRoot, engine } = sceneFixture();
+  createTableFeature(deps).desk();
+  assert.equal(deps.R.deskMesh.material[0].map.name, "original-school-bench");
+  assert.ok(
+    !sceneRoot.getObjectByName("school-bench-writing"),
+    "original carved writing is not covered by a duplicate overlay",
+  );
+  const bounds = new THREE.Box3().setFromObject(
+    sceneRoot.getObjectByName("playable-desk-top"),
+  );
+  assert.ok(
+    Math.abs(bounds.max.y) < 0.001,
+    "surface stays on the physics plane",
+  );
+  assert.ok(Math.abs(bounds.max.x - bounds.min.x - engine.TABLE.w) < 0.001);
+  assert.ok(Math.abs(bounds.max.z - bounds.min.z - engine.TABLE.h) < 0.001);
+  const classroomRoot = new THREE.Group();
+  createClassroomFeature({ ...deps, sceneRoot: classroomRoot }).props();
+  const desks = classroomRoot.children.filter((o) => o.isLOD);
+  assert.equal(desks.length, 12);
+  for (const lod of desks) {
+    const [near, far] = lod.levels.map((level) => level.object);
+    assert.ok(far.getObjectByName("chair-back"));
+    assert.ok(far.getObjectByName("desk-top"));
+    assert.deepEqual(
+      near.getObjectByName("school-chair").position.toArray(),
+      far.getObjectByName("school-chair").position.toArray(),
+    );
+    assert.equal(
+      near.getObjectByName("desk-top").geometry,
+      far.getObjectByName("desk-top").geometry,
+      "grain stays unchanged when switching distance levels",
+    );
+    assert.ok(meshesOf(far).length < meshesOf(near).length);
+  }
+  const grainPatterns = new Set(
+    desks.map(
+      (lod) => lod.levels[0].object.getObjectByName("desk-top").material[0].map,
+    ),
+  );
+  assert.equal(
+    grainPatterns.size,
+    1,
+    "surrounding desks share the same original bench finish",
+  );
+  disposeObjectTree(sceneRoot);
+  disposeObjectTree(classroomRoot);
+});
+
+test("all furniture shares the original bench material locally and disposes it independently between scene owners", () => {
+  const { deps } = sceneFixture();
+  const first = createFurnitureLibrary(deps),
+    second = createFurnitureLibrary(deps);
+  const a = first.chair(),
+    b = first.desk(),
+    other = second.desk();
+  const matA = a.getObjectByName("chair-seat").material[0];
+  const matB = b.getObjectByName("desk-top").material[0];
+  const matOther = other.getObjectByName("desk-top").material[0];
+  assert.equal(matA.map, b.getObjectByName("desk-top").material[1].map);
+  assert.equal(matB.map.name, "original-school-bench-oak");
+  assert.equal(matB.bumpMap, null);
+  assert.notEqual(matB.map, matOther.map);
+  assert.equal(matA.map.encoding, THREE.sRGBEncoding);
+  assert.equal(
+    matA.bumpMap,
+    null,
+    "the matching original bench finish has no added relief",
+  );
+  assert.equal(
+    matA.normalMap,
+    null,
+    "unrelated normal maps do not distort the supplied wood",
+  );
+  assert.equal(matA.envMapIntensity, 0, "wood has no environment reflections");
+  const alternate = first.desk(true, 0xffffff, 3);
+  const alternateTop = alternate.getObjectByName("desk-top");
+  assert.equal(
+    matB.map,
+    alternateTop.material[0].map,
+    "all surrounding desks use the identical finish",
+  );
+  const repeated = first.desk(false);
+  assert.equal(
+    repeated.getObjectByName("desk-top").material[0].map,
+    matB.map,
+    "repeated variation reuses its generated texture",
+  );
+  let disposed = 0,
+    otherDisposed = 0;
+  matA.map.addEventListener("dispose", () => disposed++);
+  matOther.map.addEventListener("dispose", () => otherDisposed++);
+  const group = new THREE.Group();
+  group.add(a, b, alternate, repeated);
+  disposeObjectTree(group);
+  assert.equal(disposed, 1);
+  assert.equal(otherDisposed, 0);
+  disposeObjectTree(other);
+  const low = createFurnitureLibrary({ ...deps, R: { quality: "low" } }).desk();
+  assert.equal(low.getObjectByName("desk-top").material[0].normalMap, null);
+  assert.equal(low.getObjectByName("desk-top").material[0].bumpMap, null);
+  disposeObjectTree(low);
+});
+
+test("classroom keeps its wall scoreboard without a freestanding board behind a player", () => {
+  const { deps, sceneRoot } = sceneFixture();
+  createClassroomFeature(deps).room();
+  assert.ok(sceneRoot.getObjectByName("wall-scoreboard"));
+  assert.ok(
+    !sceneRoot.children.some(
+      (object) => object.position.x === 78 && object.position.z === -76,
+    ),
+  );
+  disposeObjectTree(sceneRoot);
+});
 
 test("every pen builds real geometry, updates position, and releases replaced models", async () => {
   const template = await loadMatadorFixture();
@@ -120,6 +270,12 @@ test("table and classroom build independent scene groups", () => {
   assert.ok(meshesOf(classroomRoot).length > 30);
   assert.equal(world.deskMesh.parent, sceneRoot);
   assert.ok(world.clock && world.fans && world.shafts);
+  for (const fan of world.fans) {
+    assert.ok(
+      meshesOf(fan).every((mesh) => !mesh.castShadow),
+      "spinning fans cast no moving shadows",
+    );
+  }
   disposeObjectTree(sceneRoot);
   disposeObjectTree(classroomRoot);
 });
@@ -141,7 +297,7 @@ test("shared scene resources are released once across component and renderer cle
   assert.equal(materials, 1);
 });
 
-test("GLB pen preserves proportions and decals with independent player colours/resources", async () => {
+test("GLB pen fits playable dimensions and preserves decals with independent player colours/resources", async () => {
   const template = await loadMatadorFixture(),
     { deps, engine } = sceneFixture();
   const feature = createPenFeature(deps, template),
@@ -165,6 +321,15 @@ test("GLB pen preserves proportions and decals with independent player colours/r
   const bounds = new THREE.Box3().setFromObject(a.model);
   assert.ok(
     Math.abs(bounds.max.x - bounds.min.x - engine.PENS.matador_hs.len) < 0.001,
+  );
+  assert.ok(
+    Math.abs(bounds.max.y - bounds.min.y - engine.PENS.matador_hs.r * 2) <
+      0.001,
+    "visible cross-section matches its collision diameter",
+  );
+  assert.ok(
+    bounds.max.y - bounds.min.y >= engine.PENS.ball.r * 1.8,
+    "school pen remains readable alongside standard pens",
   );
   assert.ok(
     bounds.min.y >= -0.01 && bounds.min.y < 0.02,

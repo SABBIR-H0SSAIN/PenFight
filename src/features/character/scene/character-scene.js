@@ -1,9 +1,11 @@
+import { createFurnitureLibrary } from "../../furniture/scene/furniture.js";
 import { reachProgress } from "../motion.js";
 import { createHeadBuilder } from "./head.js";
 import { createHandBuilder } from "./hand.js";
 /* Character feature: stylized students, facial expression, hands, and arm IK. */
 export function createCharacterFeature(deps) {
   const { THREE: T, rand, M, place } = deps;
+  let furniture;
   const { makeCharacterHead, animateFace } = createHeadBuilder({
     T,
     M,
@@ -134,27 +136,9 @@ export function createCharacterFeature(deps) {
     S.mats = characterMaterials(idx);
     g.position.set(0, 0, side * SEAT);
     g.rotation.y = idx === 0 ? 0 : Math.PI;
-    // chair
-    const chM = M(0x5a4636, 0.65),
-      seat = new T.Mesh(new T.BoxGeometry(40, 4, 38), chM);
-    seat.position.set(0, -30, 4);
-    g.add(seat);
-    const back = new T.Mesh(new T.BoxGeometry(40, 28, 3), chM);
-    back.position.set(0, -12, 22);
-    g.add(back);
-    [
-      [-17, -10],
-      [17, -10],
-      [-17, 17],
-      [17, 17],
-    ].forEach((p) => {
-      const l = new T.Mesh(
-        new T.CylinderGeometry(1.2, 1.2, 45, 8),
-        M(0x2e3036, 0.4, 0.7),
-      );
-      l.position.set(p[0], -52, p[1]);
-      g.add(l);
-    });
+    // Furniture stays attached to the seated rig as it scoots toward the desk.
+    furniture ||= createFurnitureLibrary(deps);
+    g.add(furniture.chair(true, idx === 0 ? 0xf0e9dd : 0xf5ede1, idx + 2));
     // Seated thighs and calves have tapered cloth silhouettes, shaped knees and leather shoes.
     [-9, 9].forEach((x) => {
       const th = lathe(

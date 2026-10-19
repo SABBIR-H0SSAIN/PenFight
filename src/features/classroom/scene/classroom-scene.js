@@ -1,3 +1,5 @@
+import { createFurnitureLibrary } from "../../furniture/scene/furniture.js";
+
 /** Classroom architecture, background furniture, and lighting textures. */
 export function createClassroomFeature(deps) {
   const {
@@ -12,7 +14,8 @@ export function createClassroomFeature(deps) {
     FONT,
     sceneRoot,
   } = deps;
-  const shared = {};
+  let furniture;
+  const furnitureLibrary = () => (furniture ||= createFurnitureLibrary(deps));
   function tileTexture() {
     const c = cvs(512, 512),
       g = c.getContext("2d");
@@ -238,7 +241,7 @@ export function createClassroomFeature(deps) {
       for (let k = 0; k < 3; k++) {
         const b = new T.Mesh(new T.BoxGeometry(60, 0.8, 9), M(0xdcd5c4, 0.7));
         b.position.x = 34;
-        b.castShadow = R.quality !== "low";
+        b.castShadow = false;
         const h = new T.Group();
         h.rotation.y = (k * Math.PI * 2) / 3;
         h.add(b);
@@ -251,6 +254,7 @@ export function createClassroomFeature(deps) {
     });
     // Front wall scorekeeper, chalkboard, posters and clock.
     const bg = new T.Group();
+    bg.name = "wall-scoreboard";
     bg.position.set(0, 52, -178);
     const frame = new T.Mesh(new T.BoxGeometry(228, 118, 3), M(0x7a5230, 0.7));
     bg.add(frame);
@@ -281,7 +285,6 @@ export function createClassroomFeature(deps) {
       bg.add(ch);
     }
     sc.add(bg);
-    chalkboard();
     poster(-135, 50, -178.5, 0, [
       "A*",
       "f(n) = g(n) + h(n)",
@@ -375,86 +378,6 @@ export function createClassroomFeature(deps) {
     m.rotation.y = ry;
     sceneRoot.add(m);
   }
-  function chalkboard() {
-    const canvas = cvs(512, 320),
-      g = canvas.getContext("2d");
-    const gradient = g.createLinearGradient(0, 0, 512, 320);
-    gradient.addColorStop(0, "#234b3b");
-    gradient.addColorStop(1, "#142f27");
-    g.fillStyle = gradient;
-    g.fillRect(0, 0, 512, 320);
-    for (let i = 0; i < 900; i++) {
-      g.fillStyle = "rgba(235,242,221," + rand() * 0.055 + ")";
-      g.fillRect(rand() * 512, rand() * 320, 1 + rand() * 18, 1 + rand() * 2);
-    }
-    g.strokeStyle = "rgba(238,240,218,.7)";
-    g.lineWidth = 3;
-    g.strokeRect(18, 18, 476, 284);
-    g.fillStyle = "#f2f0d9";
-    g.font = "bold 34px " + FONT;
-    g.fillText("TODAY'S LESSON", 38, 64);
-    g.font = "30px " + FONT;
-    g.fillText("PEN FIGHT  •  CLASS 7", 38, 115);
-    g.fillText("1. Keep your pen on the desk", 38, 174);
-    g.fillText("2. Take turns and aim carefully", 38, 222);
-    g.strokeStyle = "rgba(242,240,217,.85)";
-    g.lineWidth = 4;
-    g.beginPath();
-    g.moveTo(44, 253);
-    g.lineTo(250, 253);
-    g.moveTo(285, 104);
-    g.lineTo(380, 104);
-    g.lineTo(428, 154);
-    g.lineTo(380, 204);
-    g.closePath();
-    g.stroke();
-    g.font = "24px " + FONT;
-    g.fillText("flick", 345, 246);
-
-    const board = new T.Group(),
-      texture = ctex(canvas);
-    // Put the board just behind the far-side student so it appears in the play view.
-    board.position.set(78, 0, -76);
-    const frame = new T.Mesh(new T.BoxGeometry(178, 106, 4), M(0x704923, 0.72));
-    frame.castShadow = true;
-    frame.receiveShadow = true;
-    board.add(frame);
-    const surface = new T.Mesh(
-      new T.PlaneGeometry(164, 92),
-      new T.MeshStandardMaterial({
-        map: texture,
-        roughness: 0.96,
-        emissive: 0x0a160f,
-        emissiveMap: texture,
-        emissiveIntensity: 0.22,
-      }),
-    );
-    surface.position.z = 2.2;
-    board.add(surface);
-    const tray = new T.Mesh(new T.BoxGeometry(178, 3, 8), M(0x704923, 0.72));
-    tray.position.set(0, -54, 3);
-    board.add(tray);
-    for (const side of [-1, 1]) {
-      const leg = new T.Mesh(new T.BoxGeometry(3, 44, 4), M(0x704923, 0.72));
-      leg.position.set(side * 62, -37.5, -1);
-      leg.rotation.z = side * -0.12;
-      leg.castShadow = true;
-      board.add(leg);
-    }
-    for (const [index, color] of [0xf2f0d9, 0xd6a56d].entries()) {
-      const chalk = new T.Mesh(
-        new T.CylinderGeometry(1.2, 1.2, 12, 8),
-        M(color, 0.92),
-      );
-      chalk.rotation.z = Math.PI / 2;
-      chalk.position.set(-18 + index * 24, -51, 5);
-      board.add(chalk);
-    }
-    board.traverse((object) => {
-      if (object.isMesh) object.castShadow = true;
-    });
-    sceneRoot.add(board);
-  }
   function notice(x, y, z) {
     const g = new T.Group();
     g.position.set(x, y, z);
@@ -518,63 +441,51 @@ export function createClassroomFeature(deps) {
     sceneRoot.add(g);
   }
   function deskLOD(x, z, ry) {
-    if (!shared.top) {
-      shared.top = new T.BoxGeometry(60, 3, 45);
-      shared.leg = new T.BoxGeometry(2.4, 72, 2.4);
-      shared.low = new T.BoxGeometry(60, 75, 45);
-      shared.mat = M(0xb98445, 0.7);
-      shared.metal = M(0x3a3d44, 0.4, 0.7);
-      shared.lowMat = M(0x7e5a33, 0.9);
-      shared.seat = new T.BoxGeometry(38, 3, 36);
-      shared.back = new T.BoxGeometry(38, 24, 3);
-      shared.chair = M(0x4b6f9c, 0.6);
-    }
+    const furniture = furnitureLibrary();
     const lod = new T.LOD(),
       hi = new T.Group(),
       lo = new T.Group();
-    const top = new T.Mesh(shared.top, shared.mat);
-    top.position.y = -1.5;
-    top.castShadow = true;
-    top.receiveShadow = true;
-    hi.add(top);
-    [
-      [-27, -20],
-      [27, -20],
-      [-27, 20],
-      [27, 20],
-    ].forEach((p) => {
-      const l = new T.Mesh(shared.leg, shared.metal);
-      l.position.set(p[0], FLOOR / 2 - 1.5 + 0, p[1]);
-      l.position.y = (FLOOR - 3) / 2;
-      l.scale.y = 1;
-      hi.add(l);
-    });
-    const seat = new T.Mesh(shared.seat, shared.chair);
-    seat.position.set(0, -32, 44);
-    hi.add(seat);
-    const back = new T.Mesh(shared.back, shared.chair);
-    back.position.set(0, -20, 61);
-    hi.add(back);
-    [
-      [-16, 30],
-      [16, 30],
-      [-16, 58],
-      [16, 58],
-    ].forEach((p) => {
-      const l = new T.Mesh(new T.CylinderGeometry(1, 1, 42, 6), shared.metal);
-      l.position.set(p[0], -54, p[1]);
-      hi.add(l);
-    });
-    const book = new T.Mesh(
-      new T.BoxGeometry(14, 2.2, 19),
-      M([0x2f6f9a, 0x9a3b3b, 0x4a8a4a][Math.floor(rand() * 3)], 0.8),
+    lod.name = "classroom-desk-set";
+    // Small differences in finish and placement keep the rows from looking cloned.
+    const variation = ((x > 0 ? 3 : 0) + Math.round((z + 110) / 85)) % 6;
+    const tints = [0xffffff, 0xf7f1e8, 0xeee9df, 0xf3eadb, 0xe9e2d7, 0xf8f4ed];
+    const tint = tints[variation];
+    const chairX = (rand() - 0.5) * 3,
+      chairAngle = (rand() - 0.5) * 0.07;
+    for (const [group, detail] of [
+      [hi, true],
+      [lo, false],
+    ]) {
+      group.add(furniture.desk(detail, tint, variation));
+      const chair = furniture.chair(
+        detail,
+        tints[(variation + 2) % 6],
+        variation + 3,
+      );
+      chair.position.set(chairX, 0, 40);
+      chair.rotation.y = chairAngle;
+      group.add(chair);
+    }
+    const book = new T.Group();
+    const cover = M(
+      [0x485d67, 0x794b43, 0x586348][Math.floor(rand() * 3)],
+      0.9,
     );
-    book.position.set(-12 + rand() * 14, 1.2, -5 + rand() * 8);
+    const pages = new T.Mesh(
+      new T.BoxGeometry(13.5, 1.3, 18.5),
+      M(0xc4baa5, 1),
+    );
+    pages.position.y = 0.9;
+    book.add(pages);
+    const coverGeometry = new T.BoxGeometry(14, 0.25, 19);
+    for (const y of [0.15, 1.7]) {
+      const m = new T.Mesh(coverGeometry, cover);
+      m.position.y = y;
+      book.add(m);
+    }
+    book.position.set(-12 + rand() * 14, 0.05, -5 + rand() * 8);
     book.rotation.y = rand() - 0.5;
     hi.add(book);
-    const lw = new T.Mesh(shared.low, shared.lowMat);
-    lo.add(lw);
-    lw.position.y = FLOOR / 2 - 1.5;
     lod.addLevel(hi, 0);
     lod.addLevel(lo, 330);
     lod.position.set(x, 0, z);
@@ -656,17 +567,27 @@ export function createClassroomFeature(deps) {
     // teacher table, books, globe
     const tt = new T.Group();
     tt.position.set(-150, FLOOR, -145);
-    const tp = new T.Mesh(new T.BoxGeometry(110, 4, 50), M(0x6b4a2b, 0.65));
+    const furniture = furnitureLibrary();
+    const tp = new T.Mesh(furniture.panel(110, 50, 4, 1.6, false, 0, "bench"), [
+      furniture.benchWood(110, 50),
+      furniture.edge(),
+    ]);
     tp.position.y = 72;
     tt.add(tp);
     const side = (x) => {
-      const s = new T.Mesh(new T.BoxGeometry(4, 70, 48), M(0x5b3d22, 0.7));
+      const s = new T.Mesh(
+        new T.BoxGeometry(4, 70, 48),
+        furniture.wood(0xcfc0aa),
+      );
       s.position.set(x, 35, 0);
       tt.add(s);
     };
     side(-50);
     side(50);
-    const bk = new T.Mesh(new T.BoxGeometry(60, 66, 3), M(0x4e331c, 0.8));
+    const bk = new T.Mesh(
+      new T.BoxGeometry(60, 66, 3),
+      furniture.wood(0xb7a38a),
+    );
     bk.position.set(0, 35, -22);
     tt.add(bk);
     for (let i = 0; i < 5; i++) {
