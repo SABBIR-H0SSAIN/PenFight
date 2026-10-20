@@ -9,6 +9,7 @@
     "lint": "eslint src tests next.config.ts eslint.config.mjs --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.js",
+    "test:hand-motion": "node --test tests/hand-motion.test.js",
     "format": "prettier --write src tests docs/*.md README.md CONTRIBUTING.md next.config.ts eslint.config.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },

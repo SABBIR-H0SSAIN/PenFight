@@ -3,7 +3,7 @@ export function createHandBuilder({ T, PALM, FING, FJ }) {
   function makeHand(skin, left) {
     const g = new T.Group(),
       m = left ? -1 : 1,
-      HD = { group: g, fing: {} };
+      HD = { group: g, fing: {}, side: m };
     g.rotation.order = "YZX";
     const palm = new T.Mesh(new T.SphereGeometry(1, 18, 14), skin);
     palm.scale.set(5.2, 1.45, 4.6);
@@ -60,7 +60,7 @@ export function createHandBuilder({ T, PALM, FING, FJ }) {
     tp.position.set(2.4, -0.3, -3.6 * m);
     tp.rotation.order = "XYZ";
     tp.rotation.y = 0.62 * m;
-    tp.rotation.z = -0.18;
+    tp.rotation.z = -0.14;
     g.add(tp);
     const tl = [3.6, 2.9],
       tsegs = [];
@@ -102,8 +102,12 @@ export function createHandBuilder({ T, PALM, FING, FJ }) {
     set(HD.fing.mid, rest);
     set(HD.fing.ring, rest * 1.05);
     set(HD.fing.pink, rest * 1.1);
-    HD.fing.thumb[0].rotation.z = -thumb * 0.5;
-    HD.fing.thumb[1].rotation.z = -thumb * 0.7;
+    // Oppose the thumb across the palm instead of folding it down through
+    // the desktop while the index pad is touching a low barrel.
+    HD.fing.thumb[0].rotation.y = -thumb * 0.5 * HD.side;
+    HD.fing.thumb[1].rotation.y = -thumb * 0.7 * HD.side;
+    HD.fing.thumb[0].rotation.z = -thumb * 0.12;
+    HD.fing.thumb[1].rotation.z = -thumb * 0.16;
   }
   function fingerTip(curl, sx) {
     let x = 0,

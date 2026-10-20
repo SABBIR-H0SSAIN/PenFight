@@ -2,6 +2,50 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { controllerFixture } from "./helpers/controller.js";
 
+test("an overbalanced pen lands, scores once and releases the hand before playback", async (t) => {
+  const f = controllerFixture(t, { realCharacters: true, stepMs: 16 });
+  f.ui.set({
+    settings: { ...f.ui.get().settings, replay: false },
+    preferences: {
+      ...f.ui.get().preferences,
+      pvp: { ...f.ui.get().preferences.pvp, goal: 1 },
+    },
+  });
+  const shoot = f.engine.shoot;
+  f.engine.shoot = (pens, who, act, options) => {
+    const overhanging = pens.map((p) => ({ ...p }));
+    Object.assign(overhanging[who], { x: 66, y: 50, a: 0, vx: 0, vy: 0, w: 0 });
+    return shoot(overhanging, who, { ...act, pow: 0 }, options);
+  };
+  let releasedFrames = 0,
+    landed = false;
+  const setPen = f.world.setPen;
+  f.world.setPen = (slot, state) => {
+    setPen(slot, state);
+    if (slot !== 0 || !f.shots.length) return;
+    assert.equal(
+      f.world.students[0].contactTarget,
+      null,
+      "no contact target follows the falling pen",
+    );
+    assert.equal(f.world.students[0].goal, null);
+    releasedFrames++;
+    landed ||= !!state.landed;
+  };
+  f.controller.start("pvp");
+  await f.advance(180);
+  const point = f.point();
+  f.pointer("pointerdown", point);
+  f.pointer("pointerup", { x: point.x + 80, y: point.y + 50 });
+  await f.advance(750);
+  assert.equal(f.shots.length, 1);
+  assert.ok(releasedFrames > 10);
+  assert.equal(landed, true);
+  assert.deepEqual(f.ui.get().scores, [0, 1]);
+  assert.ok(f.ui.get().end);
+  assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, 1);
+});
+
 test("the menu desk uses Matador defaults and respects changed local pen selections", (t) => {
   const f = controllerFixture(t);
   const types = [];

@@ -1,4 +1,5 @@
 import { gameConfig } from "../../config/config.ts";
+import { roundOutcome } from "../physics/outcome.js";
 /** Headless matches share the playable game’s physics and knock-off rule. */
 export function installHeadlessMatches(PF) {
   const { rng, now, clamp } = PF._internals;
@@ -37,7 +38,8 @@ export function installHeadlessMatches(PF) {
       state.turn = 1 - me;
       state.flicks[me]++;
       turns++;
-      if (res.out >= 0) return { winner: 1 - res.out, how: "out", turns };
+      const outcome = roundOutcome(res.out);
+      if (outcome) return { ...outcome, turns };
       // A yield per flick lets the browser repaint and the Stop button cancel.
       yield { roundInProgress: true, turns };
     }

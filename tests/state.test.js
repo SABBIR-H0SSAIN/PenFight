@@ -205,7 +205,12 @@ test("completed benchmarks alternate the starting player and publish final total
     options.onDecision(0, 8);
     options.onDecision(1, 12);
     yield { roundInProgress: true, turns: 1 };
-    return { winner: options.first, how: "out", turns: 2 };
+    return {
+      winner: options.first,
+      points: options.first ? [0, 1] : [1, 0],
+      how: "out",
+      turns: 2,
+    };
   };
   await createBenchmarkRunner(engine, ui).run("dfs", "astar", 4, "advanced");
   assert.deepEqual(starts, [0, 1, 0, 1]);

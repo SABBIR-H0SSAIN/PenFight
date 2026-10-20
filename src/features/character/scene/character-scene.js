@@ -1,7 +1,8 @@
 import { createFurnitureLibrary } from "../../furniture/scene/furniture.js";
-import { reachProgress } from "../motion.js";
+import { reachProgress, handAngle } from "../motion.js";
 import { createHeadBuilder } from "./head.js";
 import { createHandBuilder } from "./hand.js";
+import { createDeskClearance } from "./desk-clearance.js";
 /* Character feature: stylized students, facial expression, hands, and arm IK. */
 export function createCharacterFeature(deps) {
   const { THREE: T, rand, M, place } = deps;
@@ -120,6 +121,7 @@ export function createCharacterFeature(deps) {
       grabDone: false,
       lean: SLOUCH,
       scoot: 0,
+      shift: 0,
       contactTarget: null,
       leftState: "lap",
       blink: false,
@@ -389,6 +391,13 @@ export function createCharacterFeature(deps) {
       mat.side = T.DoubleSide;
       torso.add(new T.Mesh(geo, mat));
     });
+    S.deskClearance = createDeskClearance(T, torso);
+    S.reachScoots = LEAN_STEPS.map((lam) =>
+      Math.min(
+        SCOOT_MAX * cl((lam - 0.14) / 0.16, 0, 1),
+        safeScoot(S, bodyRotation.set(-lam, 0, 0)),
+      ),
+    );
     makeCharacterHead(S);
     // arms live in world space (IK) so they can reach across the desk; 0 = right arm, 1 = left arm
     S.arm = [1, -1].map((sx) => {
@@ -404,6 +413,11 @@ export function createCharacterFeature(deps) {
         ready: false,
         s: 1,
         ang: S.fa,
+        raiseBlend: 0,
+        fist: 0,
+        raisedRotation: new T.Quaternion().setFromEuler(
+          new T.Euler(0, (side * Math.PI) / 2, Math.PI / 2 - 0.15),
+        ),
       };
       a.sleeve = new T.Mesh(
         limbGeo([
@@ -503,10 +517,14 @@ export function createCharacterFeature(deps) {
         a.phi = 0;
         a.pitch = 0;
         a.fyaw = S.fa;
+        a.ang = S.fa;
+        a.raiseBlend = 0;
+        a.fist = 0;
         a.ready = false;
       });
       S.lean = SLOUCH;
       S.scoot = 0;
+      S.shift = 0;
     };
     /* animate hand params: obj defaults to the shooting (right) hand */
     S.to = function (props, dur, key, obj) {
@@ -535,7 +553,16 @@ export function createCharacterFeature(deps) {
       });
     };
     /* motion ids: starting a new motion on a hand supersedes (silently stops) the previous async one */
-    S.begin = (which) => (which === "l" ? ++S.mL : ++S.m);
+    S.begin = (which) => {
+      const obj = which === "l" ? S.lhand : S.hand;
+      const id = which === "l" ? ++S.mL : ++S.m;
+      S.tweens = S.tweens.filter((tween) => {
+        if (tween.obj !== obj) return true;
+        tween.res();
+        return false;
+      });
+      return id;
+    };
     S.run = async function (which, stages, id) {
       const obj = which === "l" ? S.lhand : S.hand;
       for (const st of stages) {
@@ -750,6 +777,27 @@ export function createCharacterFeature(deps) {
         S.contactTarget && arm === S.arm[0]
           ? P.ang
           : arm.fyaw + cl(angDiff(arm.fyaw, P.ang), -1.0, 1.0);
+      if (S.contactTarget && arm === S.arm[0]) {
+        // A shot direction need not force the wrist to approach from the far
+        // side of the pen. Turn it naturally toward a cross-body contact when
+        // the requested orientation would put the wrist beyond anatomical reach.
+        tipOffset(P, arm, ang, arm.pitch, _s.off);
+        _s.Wt.set(P.tx - _s.off.x, P.ty - _s.off.y, P.tz - _s.off.z);
+        const blend = cl(
+          (_s.Wt.distanceTo(sh) - (SK.up + SK.fore) * 0.94) / 8,
+          0,
+          1,
+        );
+        const natural = handAngle(
+          P.ang,
+          S.fa,
+          Math.atan2(P.tz - sh.z, P.tx - sh.x),
+        );
+        ang += angDiff(ang, natural) * blend;
+      }
+      arm.ang +=
+        angDiff(arm.ang, ang) * (arm.ready ? 1 - Math.exp(-dt * 20) : 1);
+      ang = arm.ang;
       arm.pitch +=
         (cl(arm.lastDy * 0.4, -0.3, 0.4) - arm.pitch) * Math.min(1, dt * 8);
       tipOffset(P, arm, ang, arm.pitch, _s.off);
@@ -767,31 +815,37 @@ export function createCharacterFeature(deps) {
     arm.elbow.position.copy(E);
     arm.wrist.position.copy(Wc);
     arm.hand.group.position.copy(Wc);
-    if (raise)
-      arm.hand.group.rotation.set(
-        0,
-        (S.side * Math.PI) / 2,
-        Math.PI / 2 - 0.15,
-      );
-    else arm.hand.group.rotation.set(0, -ang, arm.pitch);
-    const f = fist || 0;
+    const reactionEase = 1 - Math.exp(-dt * 10);
+    arm.raiseBlend += ((raise ? 1 : 0) - arm.raiseBlend) * reactionEase;
+    arm.fist += ((fist || 0) - arm.fist) * reactionEase;
+    arm.hand.group.rotation.set(0, -ang, arm.pitch);
+    if (arm.raiseBlend > 1e-6)
+      arm.hand.group.quaternion.slerp(arm.raisedRotation, arm.raiseBlend);
+    const f = arm.fist;
     poseHand(
       arm.hand,
       Math.max(P.curl, f * 1.1),
-      Math.max(cl(0.28 + P.curl * 0.95, 0.28, 1.2), f * 1.2),
+      // Keep the resting fingers above the desk when the index is extended.
+      Math.max(cl(0.16 + P.curl * 0.65, 0.25, 1.2), f * 1.2),
       cl(0.25 + P.curl * 0.45, 0.2, 0.85),
     );
     // World-space center of the finger pad, computed from the rendered skeleton.
     arm.hand.group.updateMatrixWorld(true);
     arm.hand.tipMarker.getWorldPosition(arm.tip);
   }
-  function shoulderAt(S, sx, lam, scoot, out) {
+  function shoulderAt(S, sx, lam, scoot, shift, out) {
     out
       .set(0, HIP.y + SH.y * Math.cos(lam), 0)
       .addScaledVector(S.right, sx * SH.x)
       .addScaledVector(S.fwd, SH.y * Math.sin(lam) - HIP.z);
     out.z += S.side * (SEAT - scoot);
+    out.x += shift;
     return out;
+  }
+  const bodyRotation = new T.Euler();
+  function safeScoot(S, rotation, jump = 0) {
+    const front = S.deskClearance(rotation, HIP.y + jump);
+    return Math.min(SEAT + HIP.z + front - 50 - 0.6, SCOOT_MAX);
   }
 
   /* ------------------------------------------------------------ per frame */
@@ -905,7 +959,8 @@ export function createCharacterFeature(deps) {
     }
     // lean / scoot: lean far enough forward (and slide the chair a little) that the playing hand can reach its target
     let wantLam = SLOUCH,
-      wantScoot = 0;
+      wantScoot = 0,
+      wantShift = 0;
     if (!victory) {
       const anticipated = S.contactTarget
         ? {
@@ -928,19 +983,28 @@ export function createCharacterFeature(deps) {
             new T.Vector3(q[0].tx - o.x, q[0].ty - o.y, q[0].tz - o.z),
           ];
         });
-        for (const lam of LEAN_STEPS) {
-          const sc = SCOOT_MAX * cl((lam - 0.14) / 0.16, 0, 1);
-          wantLam = lam;
-          wantScoot = sc;
-          let ok = true;
-          for (const q of tg)
+        const direction = Math.sign(
+          tg[0][1].x - S.right.x * tg[0][0].sx * SH.x,
+        );
+        // Try the centered seat first. Cross-body targets can move the chair
+        // sideways instead of pushing the student's abdomen through the desk.
+        findPose: for (const shift of [0, 4, 8, 12, 16]) {
+          for (let i = 0; i < LEAN_STEPS.length; i++) {
+            const lam = LEAN_STEPS[i],
+              sc = S.reachScoots[i];
+            wantLam = lam;
+            wantScoot = sc;
+            wantShift = shift * direction;
             if (
-              shoulderAt(S, q[0].sx, lam, sc, _tg).distanceTo(q[1]) > REACH_OK
-            ) {
-              ok = false;
-              break;
-            }
-          if (ok) break;
+              tg.every(
+                (q) =>
+                  shoulderAt(S, q[0].sx, lam, sc, wantShift, _tg).distanceTo(
+                    q[1],
+                  ) <= REACH_OK,
+              )
+            )
+              break findPose;
+          }
         }
       }
     }
@@ -950,6 +1014,7 @@ export function createCharacterFeature(deps) {
     const poseRate = reaching ? 8 : 4;
     S.lean += (wantLam - S.lean) * (1 - Math.exp(-dt * poseRate));
     S.scoot += (wantScoot - S.scoot) * (1 - Math.exp(-dt * poseRate));
+    S.shift += (wantShift - S.shift) * (1 - Math.exp(-dt * poseRate));
     const breathe = Math.sin(time * 1.5 + S.idx * 2) * 0.01,
       sway = Math.sin(time * 0.45 + S.idx * 1.7);
     const totalLean = cl(S.lean + lean + breathe, -0.15, 0.36);
@@ -959,7 +1024,11 @@ export function createCharacterFeature(deps) {
       Math.sin(time * 0.37 + S.idx) * 0.012,
     );
     S.torso.position.y = HIP.y + jump;
+    // Apply clearance after breathing, sway and reactions, as well as reach.
+    // Arms are solved from this final body pose, so they stay attached.
+    S.scoot = Math.min(S.scoot, safeScoot(S, S.torso.rotation, jump));
     g.position.z = S.side * (SEAT - S.scoot);
+    g.position.x = S.shift;
     g.updateMatrixWorld(true);
     S.invT.copy(S.torso.matrixWorld).invert();
     // head follows the look target; the torso lean is compensated so the eyes stay on it

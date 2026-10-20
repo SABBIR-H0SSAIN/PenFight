@@ -1,10 +1,15 @@
 import { gameConfig, CONFIG_LIMITS } from "../../config/config.ts";
-import { impactPlaybackRate, replayWindow } from "./playback.js";
+import {
+  impactPlaybackRate,
+  replayWindow,
+  interpolateRecording,
+} from "./playback.js";
 import { handAngle } from "@/features/character/motion.js";
 import * as THREE from "three";
 import { createScope } from "./scope.js";
 import { buildMatchOptions, penColorFor } from "./modes.js";
 import { createBenchmarkRunner } from "@/game/ai/benchmark.js";
+import { roundOutcome } from "../physics/outcome.js";
 import {
   CAMERA_PRESETS,
   cameraAngle,
@@ -342,31 +347,6 @@ export function createController({
 
   /* ------------------------------------------------------------- playback */
   const REC = gameConfig.playback.recordInterval;
-  function interp(rec, t) {
-    const f = t / REC,
-      i = Math.min(rec.length - 1, Math.floor(f)),
-      j = Math.min(rec.length - 1, i + 1),
-      u = f - i,
-      A = rec[i],
-      B = rec[j];
-    return {
-      t,
-      p: A.p.map((a, k) => {
-        const b = B.p[k];
-        return {
-          x: a.x + (b.x - a.x) * u,
-          y: a.y + (b.y - a.y) * u,
-          a: a.a + (b.a - a.a) * u,
-          z: a.z + (b.z - a.z) * u,
-          out: a.out,
-          outT: a.outT,
-          vx: a.vx,
-          vy: a.vy,
-          roll: a.roll + (b.roll - a.roll) * u,
-        };
-      }),
-    };
-  }
   function startPlay(res, who, opts) {
     opts = opts || {};
     return new Promise((resolve) => {
@@ -378,7 +358,8 @@ export function createController({
       // Landings use simulation time, so pause, replay and AI speed stay in sync.
       const events = res.events
         .flatMap((event) =>
-          event.type === "out"
+          event.type === "out" &&
+          !res.events.some((e) => e.type === "landing" && e.who === event.who)
             ? [
                 event,
                 {
@@ -387,7 +368,9 @@ export function createController({
                   t: Math.min(fullDuration, event.t + 0.38),
                 },
               ]
-            : event.type === "hit"
+            : event.type === "hit" ||
+                event.type === "out" ||
+                event.type === "landing"
               ? [event]
               : [],
         )
@@ -426,7 +409,8 @@ export function createController({
     if (!P) return;
     const sp = impactPlaybackRate(P.t, P.impact, P.speed);
     P.t = Math.min(P.dur, P.t + dt * sp);
-    const fr = interp(P.rec, P.t);
+    const fr = interpolateRecording(P.rec, P.t);
+    if (!fr) return;
     G.curFrame = fr;
     P.frameVel = fr.p[P.who];
     while (P.ei < P.events.length && P.events[P.ei].t <= P.t) {
@@ -488,13 +472,16 @@ export function createController({
     let sumX = 0,
       sumY = 0,
       sumZ = 0;
-    for (let elapsed = 0; elapsed < limit; elapsed += 0.025) {
+    const started = clock;
+    for (;;) {
       chk(tok);
+      const elapsed = clock - started;
       const ex = x - arm.tip.x,
         ez = z - arm.tip.z,
         ey = height - arm.tip.y;
-      if (arm.ready && Math.hypot(ex, ez) < 1.6 && Math.abs(ey) < 1.5)
+      if (arm.ready && Math.hypot(ex, ez) < 0.2 && Math.abs(ey) < 0.15)
         return true;
+      if (elapsed >= limit) return false;
       // Calibrate small residual FK/constraint errors from the *rendered* index
       // pad; limits prevent corrections from dragging an unreachable limb away.
       if (elapsed > 0.05 && arm.ready) {
@@ -514,9 +501,8 @@ export function createController({
           sumY += dy;
         }
       }
-      await wait(0.025);
+      await wait(Math.min(0.025, limit - elapsed));
     }
-    return false;
   }
   async function flickAnim(i, act, contact, fromPull) {
     const S = students[i],
@@ -585,7 +571,7 @@ export function createController({
       "contact",
     );
     chk(tok);
-    await waitForTouch(S, contact, height, tok, 0.14);
+    await waitForTouch(S, contact, height, tok);
   }
   /* pull the playing hand back to the lap right away, so it is never over the table while the pen slides */
   function retract(i) {
@@ -616,6 +602,9 @@ export function createController({
     // barrel, then the arm returns to the lap while the result animates.
     const movingHand = students[who],
       followToken = G.token;
+    movingHand.goal = null;
+    movingHand.grabP = null;
+    movingHand.contactTarget = null;
     movingHand.to({ ty: movingHand.hand.ty + 5, curl: 0.27 }, 0.11).then(() => {
       if (!disposed && G.token === followToken) retract(who);
     });
@@ -1028,7 +1017,8 @@ export function createController({
       st.turn = 1 - who;
       st.flicks[who]++;
       updateHud();
-      if (res.out >= 0) return { winner: 1 - res.out, how: "out", res, who };
+      const outcome = roundOutcome(res.out);
+      if (outcome) return { ...outcome, res, who };
       await wait(0.16);
     }
   }
@@ -1067,20 +1057,33 @@ export function createController({
   async function roundEnd(r) {
     const tok = G.token,
       win = r.winner;
-    if (win < 0) {
-      showBanner("Draw", "Replaying the round", 1500);
-      await wait(1.6);
-      return;
-    }
-    G.scores[win]++;
+    r.points.forEach((points, side) => {
+      G.scores[side] += points;
+    });
     syncBoard();
+    updateHud();
+    const shared = win < 0;
     const humanWon = G.humans[0] && win === 0,
       humanMatch = G.humans[0] && G.mode !== "pvp";
-    const how = r.who === win ? "Knocked off the desk" : "Slid off the desk";
-    showBanner(G.names[win] + " takes the round", how, 2200);
-    Snd.round(humanMatch ? humanWon : true);
-    const matchDone = G.scores[win] >= G.goal;
+    const how = shared
+      ? "Both pens fell · +1 point each"
+      : r.who === win
+        ? "Knocked off the desk"
+        : "Slid off the desk";
+    const title = shared
+      ? "Both players score"
+      : G.names[win] + " takes the round";
+    showBanner(title, how, 2200);
+    Snd.round(shared || !humanMatch || humanWon);
+    const matchDone = G.scores.some((score) => score >= G.goal);
     const reactions = () => {
+      if (shared) {
+        students.forEach((student) => {
+          student.react = { kind: "happy", t: 0, dur: 2.4 };
+          student.setEmotion("happy", 2.6);
+        });
+        return;
+      }
       students[win].react = {
         kind: matchDone ? "victory" : "happy",
         t: 0,
@@ -1096,12 +1099,12 @@ export function createController({
       await wait(0.1);
       await replayShot();
       reactions();
-      showBanner(G.names[win] + " takes the round", how, 2200);
-      C.who = 1 - win;
+      showBanner(title, how, 2200);
+      C.who = shared ? 1 - r.who : 1 - win;
       G.camMode = "react";
       await wait(0.35);
       chk(tok);
-      C.who = win;
+      C.who = shared ? r.who : win;
       await wait(0.35);
     } else {
       reactions();
@@ -1120,10 +1123,8 @@ export function createController({
         if (!r) return;
         await roundEnd(r);
         chk(tok);
-        if (r.winner >= 0) {
-          first = 1 - first;
-          G.round++;
-        }
+        first = 1 - first;
+        G.round++;
         if (G.scores[0] >= G.goal || G.scores[1] >= G.goal) break;
       }
       await matchEnd();
@@ -1132,18 +1133,22 @@ export function createController({
     }
   }
   async function matchEnd() {
-    const w = G.scores[0] > G.scores[1] ? 0 : 1,
+    const tied = G.scores[0] === G.scores[1],
+      w = G.scores[0] > G.scores[1] ? 0 : 1,
       humanVs = G.humans[0] && G.mode !== "pvp",
       youWon = humanVs && w === 0;
     G.camMode = "react";
     C.who = w;
-    if (humanVs) (youWon ? Snd.win : Snd.lose)();
+    if (tied) Snd.round(true);
+    else if (humanVs) (youWon ? Snd.win : Snd.lose)();
     else Snd.win();
-    let title = humanVs
-      ? youWon
-        ? "You win the match"
-        : G.names[1] + " wins the match"
-      : G.names[w] + " wins the series";
+    const title = tied
+      ? "Match drawn"
+      : humanVs
+        ? youWon
+          ? "You win the match"
+          : G.names[1] + " wins the match"
+        : G.names[w] + " wins the series";
     const sub =
       G.scores[0] + " – " + G.scores[1] + " · " + (G.round - 1) + " rounds";
     await wait(0.6);

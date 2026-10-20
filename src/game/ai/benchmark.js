@@ -56,7 +56,7 @@ export function createBenchmarkRunner(PF, ui) {
             ui.set({
               benchmark: {
                 ...ui.get().benchmark,
-                status: `Match ${i + 1}/${N} · ${step.value.turns} flicks. First pen off the desk loses.`,
+                status: `Match ${i + 1}/${N} · ${step.value.turns} flicks. Both score if both pens fall.`,
               },
             });
         } while (
@@ -71,7 +71,9 @@ export function createBenchmarkRunner(PF, ui) {
         return;
       }
       const result = step.value;
-      if (result.winner >= 0) wins[result.winner]++;
+      result.points.forEach((points, side) => {
+        wins[side] += points;
+      });
       turns += result.turns;
       if (result.how === "out") outs++;
       ui.set({

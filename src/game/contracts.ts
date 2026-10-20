@@ -18,6 +18,11 @@ export interface PenState {
   vz: number;
   out: boolean;
   outT: number;
+  tipAngle: number;
+  tipNX: number;
+  tipNY: number;
+  tipPhase: number;
+  landed?: boolean;
   L: number;
   r: number;
   m: number;
