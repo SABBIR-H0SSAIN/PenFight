@@ -1,5 +1,6 @@
 "use client";
 import { useLayoutEffect } from "react";
+import { gameConfig } from "@/config/config";
 import { createPenFeature } from "./models/pen-models.js";
 import { disposeObjectTree } from "@/game/scene/dispose.js";
 import { useGameServices } from "@/features/game/runtime/GameProvider";
@@ -15,7 +16,7 @@ export interface PenProps {
 /** Owns one player's meshes. Physics drives its transform through the registered handle. */
 export function Pen({
   slot,
-  model = "ball",
+  model = gameConfig.preferences.pvp.pen1.pen,
   color,
   matadorTemplate,
 }: PenProps) {

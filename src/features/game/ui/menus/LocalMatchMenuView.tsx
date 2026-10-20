@@ -1,4 +1,5 @@
 "use client";
+import { CONFIG_LIMITS } from "@/config/config";
 import {
   useGamePreferences,
   useGameServices,
@@ -18,7 +19,7 @@ export function LocalMatchMenuView() {
           Player 1
           <input
             type="text"
-            maxLength={14}
+            maxLength={CONFIG_LIMITS.nameLength}
             autoComplete="off"
             value={value.name1}
             onChange={(event) => update({ name1: event.target.value })}
@@ -28,7 +29,7 @@ export function LocalMatchMenuView() {
           Player 2
           <input
             type="text"
-            maxLength={14}
+            maxLength={CONFIG_LIMITS.nameLength}
             autoComplete="off"
             value={value.name2}
             onChange={(event) => update({ name2: event.target.value })}
@@ -61,7 +62,7 @@ export function LocalMatchMenuView() {
           value={value.goal}
           onChange={(event) => update({ goal: Number(event.target.value) })}
         >
-          {[1, 3, 5].map((goal) => (
+          {CONFIG_LIMITS.goals.map((goal) => (
             <option key={goal} value={goal}>
               {goal} {goal === 1 ? "round" : "rounds"}
             </option>

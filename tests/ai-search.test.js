@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createUninformedStrategy } from "../src/game/ai/strategies/uninformed.js";
 import { createMinimaxStrategy } from "../src/game/ai/strategies/minimax.js";
+import { createSearchStrategy } from "../src/game/ai/strategies/search.js";
+import { createMctsStrategy } from "../src/game/ai/strategies/mcts.js";
 import { createGameEngine } from "../src/game/engine.js";
 
 function run(generator) {
@@ -57,17 +59,7 @@ test("registered algorithms and difficulty defaults match the allowed set", () =
   const engine = createGameEngine();
   assert.deepEqual(
     Object.keys(engine.ALGOS).sort(),
-    [
-      "dfs",
-      "dls",
-      "iddfs",
-      "bidirectional",
-      "best",
-      "astar",
-      "minimax",
-      "mcts",
-      "fuzzy",
-    ].sort(),
+    ["dfs", "dls", "iddfs", "best", "astar", "minimax", "mcts", "fuzzy"].sort(),
   );
   assert.deepEqual(
     Object.keys(engine.SHORT).sort(),
@@ -102,26 +94,6 @@ test("IDDFS increases depth limits from zero to a complete four-choice shot", ()
   assert.equal(ctx.live.extra.depthLimit, 4);
   assert.equal(ctx.live.extra.found, true);
   assert.equal(ctx.evals, 1);
-});
-test("bidirectional frontiers meet through actual goal-prefix predecessors", () => {
-  const { ctx, bidirectional } = setup("0,0,0,0");
-  const result = run(bidirectional({}, 0, { leafBudget: 1 }, ctx));
-  assert.equal(result.action.key, "0,0,0,0");
-  assert.equal(ctx.live.extra.found, true);
-  assert.equal(ctx.live.extra.meetingDepth, 2);
-  assert.equal(ctx.live.extra.goalCandidates, 1);
-  assert.equal(
-    ctx.evals,
-    1,
-    "goal discovery is counted in the simulation budget",
-  );
-});
-test("bidirectional search reports no goal when verified shots are unsafe", () => {
-  const { ctx, bidirectional } = setup("0,0,0,0", 1);
-  run(bidirectional({}, 0, { leafBudget: 1 }, ctx));
-  assert.equal(ctx.live.extra.goalCandidates, 0);
-  assert.equal(ctx.live.extra.found, false);
-  assert.equal(ctx.live.extra.meetingDepth, undefined);
 });
 test("minimax chooses the best worst-case reply rather than the expected reply", () => {
   const { ctx, helpers } = setup();
@@ -160,20 +132,96 @@ test("minimax chooses the best worst-case reply rather than the expected reply",
     }),
   });
   const result = run(
-    minimaxAI({ pens: { 0: {}, 1: {} } }, 0, { depth: 2, beam: 2 }, ctx),
+    minimaxAI(
+      { pens: { 0: {}, 1: {} } },
+      0,
+      { depth: 2, beam: 2, maxVisibleNodes: 1 },
+      ctx,
+    ),
   );
   assert.equal(result.action.key, "B");
   assert.equal(result.moves[0].score, 40);
   assert.equal(ctx.live.extra.worstReply, "bad");
+  assert.equal(
+    ctx.live.nodes.length,
+    1,
+    "display cap does not truncate minimax search",
+  );
 });
 test("obsolete decision identifiers resolve to the supported A* default", () => {
   const engine = createGameEngine();
   const state = engine.newState(["ball", "gel"], engine.rng(31), 0);
-  for (const algo of ["bfs", "planner", "hybrid", "unknown"]) {
+  for (const algo of ["bidirectional", "bfs", "planner", "hybrid", "unknown"]) {
     const result = engine.runSync(
       engine.decide(state, 0, { algo, seed: 42, budgetScale: 0.02 }),
     );
     assert.equal(result.info.algo, "astar");
     assert.ok(Number.isFinite(result.action.pow));
+  }
+});
+
+test("DFS and IDDFS respect configured shallow and zero depth limits", () => {
+  for (const mode of ["dfs", "iddfs"]) {
+    for (const depthLimit of [0, 2]) {
+      const { ctx, depthSearch } = setup();
+      const result = run(depthSearch({}, 0, { depthLimit }, ctx, mode));
+      assert.ok(ctx.live.nodes.every((n) => n.d <= depthLimit));
+      assert.equal(ctx.live.extra.cutoff, true);
+      assert.equal(ctx.live.extra.found, false);
+      assert.equal(ctx.evals, 1);
+      assert.ok(result.action.key);
+    }
+  }
+});
+
+test("best-first and A* respect depth limits and keep a playable fallback", () => {
+  for (const astar of [false, true]) {
+    for (const depthLimit of [0, 2, 4]) {
+      const { ctx, helpers } = setup();
+      const { informed } = createSearchStrategy(helpers);
+      const result = run(
+        informed({}, 0, { depthLimit, evalBudget: 1000 }, ctx, astar),
+      );
+      assert.ok(ctx.live.nodes.every((n) => n.d <= depthLimit));
+      assert.equal(ctx.live.extra.cutoff, depthLimit < 4);
+      assert.equal(ctx.live.extra.found, depthLimit === 4);
+      assert.ok(result.action.key);
+    }
+  }
+});
+
+test("MCTS rollout depth changes simulation work independently of visible nodes", () => {
+  for (const rolloutDepth of [0, 2]) {
+    const { ctx, helpers } = setup();
+    ctx.rng = () => 0;
+    const action = { key: "shot", label: "shot" };
+    const pens = { 0: {}, 1: {} };
+    const { mctsAI } = createMctsStrategy({
+      ...helpers,
+      ev: () => ({ score: 50 }),
+      stats: () => ({}),
+      PF: {
+        allActions: () => [action],
+        quickActions: () => [action],
+        shoot: () => ({ pens }),
+        E: () => 0.5,
+      },
+    });
+    const result = run(
+      mctsAI(
+        { pens },
+        0,
+        {
+          iters: 1,
+          depth: 1,
+          rolloutDepth,
+          maxVisibleNodes: 1,
+        },
+        ctx,
+      ),
+    );
+    assert.equal(ctx.sims, 1 + rolloutDepth);
+    assert.equal(ctx.live.nodes.length, 1);
+    assert.equal(result.action.key, "shot");
   }
 });

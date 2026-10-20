@@ -1,4 +1,5 @@
 "use client";
+import { gameConfig } from "@/config/config";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Object3D } from "three";
 import { loadMatadorHighSchool } from "@/features/pen/models/load-pen-assets.js";
@@ -22,9 +23,9 @@ function Renderer() {
       world.init(
         canvas.current,
         quality === "auto"
-          ? canvas.current.clientWidth < 600
-            ? "medium"
-            : "high"
+          ? canvas.current.clientWidth < gameConfig.graphics.mobileBreakpoint
+            ? gameConfig.graphics.autoMobile
+            : gameConfig.graphics.autoDesktop
           : quality,
       );
     } catch (error) {
@@ -89,7 +90,16 @@ export function GameScene() {
       <Classroom />
       <Table />
       <Pen slot={0} matadorTemplate={matadorTemplate} />
-      <Pen slot={1} model="premium" matadorTemplate={matadorTemplate} />
+      <Pen
+        slot={1}
+        model={gameConfig.preferences.pvp.pen2.pen}
+        color={
+          gameConfig.preferences.pvp.pen2.colors[
+            gameConfig.preferences.pvp.pen2.pen
+          ]
+        }
+        matadorTemplate={matadorTemplate}
+      />
       <Character slot={0} />
       <Character slot={1} />
       <Simulation />

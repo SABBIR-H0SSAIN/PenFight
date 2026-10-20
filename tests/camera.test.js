@@ -12,6 +12,26 @@ import {
 } from "../src/game/controller/camera.js";
 import { controllerFixture } from "./helpers/controller.js";
 
+test("configured Player-view rotation survives a turn change", async (t) => {
+  const original = CAMERA_PRESETS.player.azimuth;
+  CAMERA_PRESETS.player.azimuth = 20;
+  t.after(() => {
+    CAMERA_PRESETS.player.azimuth = original;
+  });
+  const f = controllerFixture(t);
+  f.controller.start("pvp");
+  await f.advance(100);
+  f.controller.setCameraPreset("player");
+  await f.advance(100);
+  assert.equal(f.ui.get().camera.azimuth, 20);
+  const point = f.point(f.ui.get().turn.who);
+  f.pointer("pointerdown", point);
+  f.pointer("pointerup", { x: point.x + 20, y: point.y + 10 });
+  await f.advance(200);
+  assert.equal(f.ui.get().turn.who, 1);
+  assert.equal(f.ui.get().camera.azimuth, -160);
+});
+
 test("relative slider keypresses publish immediately instead of losing steps before the next frame", async (t) => {
   const f = controllerFixture(t);
   f.controller.start("pvp");

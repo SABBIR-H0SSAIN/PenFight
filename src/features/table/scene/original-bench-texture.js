@@ -1,3 +1,4 @@
+import { gameConfig } from "../../../config/config.ts";
 /** Original light classroom-bench grain, scratches and carved writing. */
 export function createOriginalBenchTexture(
   deps,
@@ -145,7 +146,9 @@ export function createOriginalBenchTexture(
     }
     return c;
   }
-  const w = options.resolution || (R.quality === "low" ? 512 : 1024);
+  const w =
+    options.resolution ||
+    gameConfig.graphics.quality[R.quality || "high"].woodTextureSize;
   const h = Math.round((w * H) / W);
   const carve = [
     { t: "AJ", x: 0.8, y: 0.88, r: Math.PI, s: 54 },

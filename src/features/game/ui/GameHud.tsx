@@ -1,4 +1,5 @@
 "use client";
+import { CONFIG_LIMITS } from "@/config/config";
 import {
   useGamePreferences,
   useGameServices,
@@ -52,7 +53,7 @@ export function GameHud() {
                 services.controller?.setSpeed(Number(event.target.value))
               }
             >
-              {[1, 2, 4].map((speed) => (
+              {CONFIG_LIMITS.speeds.map((speed) => (
                 <option value={speed} key={speed}>
                   {speed}×
                 </option>

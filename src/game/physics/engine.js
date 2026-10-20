@@ -1,3 +1,4 @@
+import { gameConfig, CONFIG_LIMITS } from "../../config/config.ts";
 import {
   PEN_DEFINITIONS,
   CUSTOM_PEN_COLORS,
@@ -5,26 +6,29 @@ import {
 
 export function createPhysics() {
   const PF = {};
-  PF.REAL = true;
+  PF.REAL = gameConfig.settings.real;
   PF.setRealism = (v) => {
     PF.REAL = !!v;
   };
   // Shared by gameplay, AI simulations and benchmarks. Calibrated default is
   // 98% of the former friction: slightly more slide, without the one-shot
   // knock-off regression that occurred with experimental independent rolling.
-  PF.FRICTION = 0.98;
+  PF.FRICTION = gameConfig.settings.friction;
   PF.setFriction = function (value) {
     const num = Number(value);
     PF.FRICTION = Number.isFinite(num)
-      ? Math.max(0.8, Math.min(1.1, num))
-      : 0.98;
+      ? Math.max(
+          CONFIG_LIMITS.friction.min,
+          Math.min(CONFIG_LIMITS.friction.max, num),
+        )
+      : gameConfig.settings.friction;
   };
   const W = 60,
     H = 100,
-    G = 981,
-    VMAX = 210,
-    SPIN = 0.12,
-    DT = 1 / 200;
+    G = gameConfig.physics.gravity,
+    VMAX = gameConfig.physics.maxFlickSpeed,
+    SPIN = gameConfig.physics.spinMultiplier,
+    DT = gameConfig.physics.timeStep;
   PF.TABLE = { w: W, h: H };
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const now = () =>
@@ -423,7 +427,9 @@ export function createPhysics() {
       ang += gauss(r) * noise.a;
       pow = clamp(pow * (1 + gauss(r) * noise.p), 0.05, 1.1);
     }
-    const v = ((VMAX * pow * p.spd) / Math.sqrt(p.m)) * (act.surge ? 1.6 : 1);
+    const v =
+      ((VMAX * pow * p.spd) / Math.sqrt(p.m)) *
+      (act.surge ? gameConfig.physics.surgeMultiplier : 1);
     const dx = Math.cos(ang),
       dy = Math.sin(ang);
     p.vx += dx * v;
@@ -448,7 +454,7 @@ export function createPhysics() {
       events: [],
     };
     const fl = PF.flick(P[who], act, o.noise, o.rng);
-    const maxT = o.maxT || 4.5,
+    const maxT = o.maxT || gameConfig.physics.simulationSeconds,
       after = o.afterOut || 0;
     const rec = o.record ? [] : null;
     let recAcc = 0;

@@ -1,8 +1,9 @@
+import { gameConfig, CONFIG_LIMITS } from "../../config/config.ts";
 import { impactPlaybackRate, replayWindow } from "./playback.js";
 import { handAngle } from "@/features/character/motion.js";
 import * as THREE from "three";
 import { createScope } from "./scope.js";
-import { buildMatchOptions } from "./modes.js";
+import { buildMatchOptions, penColorFor } from "./modes.js";
 import { createBenchmarkRunner } from "@/game/ai/benchmark.js";
 import {
   CAMERA_PRESETS,
@@ -37,7 +38,8 @@ export function createController({
   }
   const isMobile =
     /Android|iPhone|iPad|Mobi/i.test(navigator.userAgent) ||
-    Math.min(viewport().width, viewport().height) < 600;
+    Math.min(viewport().width, viewport().height) <
+      gameConfig.graphics.mobileBreakpoint;
   const G = {
     mode: "menu",
     token: 0,
@@ -45,9 +47,12 @@ export function createController({
     state: null,
     scores: [0, 0],
     round: 1,
-    goal: 3,
+    goal: gameConfig.matches.versusGoal,
     names: ["Sabbir", "Bunty"],
-    pens: ["ball", "ball"],
+    pens: [
+      ui.get().preferences.pvp.pen1.pen,
+      ui.get().preferences.pvp.pen2.pen,
+    ],
     ai: [null, null],
     humans: [true, false],
     play: null,
@@ -92,7 +97,11 @@ export function createController({
     )
       G.camMode = SET.follow ? "follow" : "game";
     const quality =
-      SET.quality === "auto" ? (isMobile ? "medium" : "high") : SET.quality;
+      SET.quality === "auto"
+        ? isMobile
+          ? gameConfig.graphics.autoMobile
+          : gameConfig.graphics.autoDesktop
+        : SET.quality;
     if (qualityChanged && World.quality !== quality) World.setQuality(quality);
   }
   applySettings();
@@ -332,7 +341,7 @@ export function createController({
   }
 
   /* ------------------------------------------------------------- playback */
-  const REC = 1 / 60;
+  const REC = gameConfig.playback.recordInterval;
   function interp(rec, t) {
     const f = t / REC,
       i = Math.min(rec.length - 1, Math.floor(f)),
@@ -601,7 +610,7 @@ export function createController({
     const res = PF.shoot(st.pens, who, act, {
       record: REC,
       afterOut: 0.45,
-      maxT: 4.8,
+      maxT: gameConfig.physics.gameplaySimulationSeconds,
     });
     // A short vertical follow-through clears the pen instead of crossing its
     // barrel, then the arm returns to the lap while the result animates.
@@ -743,9 +752,15 @@ export function createController({
     if (drag && e.pointerId === drag.pid) {
       const dx = e.clientX - drag.x,
         dy = e.clientY - drag.y;
-      if (drag.started || Math.hypot(dx, dy) > 3) {
+      if (
+        drag.started ||
+        Math.hypot(dx, dy) > gameConfig.input.orbitThreshold
+      ) {
         drag.started = true;
-        setCameraAngle(drag.azimuth - dx * 0.35, drag.elevation + dy * 0.25);
+        setCameraAngle(
+          drag.azimuth - dx * gameConfig.input.rotateSensitivity,
+          drag.elevation + dy * gameConfig.input.tiltSensitivity,
+        );
         e.preventDefault();
       }
       return;
@@ -871,7 +886,7 @@ export function createController({
       }
       chk(tok);
     }
-    const need = (cfg.think || 800) / G.speed - (performance.now() - t0);
+    const need = (cfg.think ?? 800) / G.speed - (performance.now() - t0);
     if (need > 0) await wait(need / 1000);
     S.thinking = false;
     S.setEmotion("neutral", 0);
@@ -992,7 +1007,12 @@ export function createController({
         if (G.mode === "pvp") {
           G.viewSide = who;
           if (C.angle.preset === "player")
-            setCameraAngle(who * 180, C.angle.elevation, "player", false);
+            setCameraAngle(
+              CAMERA_PRESETS.player.azimuth + who * 180,
+              C.angle.elevation,
+              "player",
+              false,
+            );
         }
         got = await humanAim(who);
         chk(tok);
@@ -1192,10 +1212,11 @@ export function createController({
       surge: { visible: false, available: false, enabled: false },
       benchmark: { running: false, status: "", result: null },
     });
-    G.state = PF.newState(["ball", "premium"], playRng, 0);
-    G.penColors = [null, null];
-    World.setPenType(0, "ball");
-    World.setPenType(1, "premium");
+    const { pen1, pen2 } = ui.get().preferences.pvp;
+    G.pens = [pen1.pen, pen2.pen];
+    G.penColors = [penColorFor(PF, pen1), penColorFor(PF, pen2)];
+    G.state = PF.newState(G.pens, playRng, 0);
+    G.pens.forEach((kind, i) => World.setPenType(i, kind, G.penColors[i]));
     G.spawn = 1;
     G.state.pens.forEach((pen, i) => World.setPen(i, { z: 0, ...pen }, 0, 1));
     Object.assign(World.board, {
@@ -1512,7 +1533,7 @@ export function createController({
       }
     },
     setSpeed(speed) {
-      if (disposed || ![1, 2, 4].includes(speed)) return;
+      if (disposed || !CONFIG_LIMITS.speeds.includes(speed)) return;
       G.speed = speed;
       ui.set({ speed });
     },
@@ -1537,7 +1558,13 @@ export function createController({
     },
     resetCamera() {
       const angle = overviewCamera(viewport().width / viewport().height);
-      setCameraAngle(angle.azimuth, angle.elevation, "overview", false, 1);
+      setCameraAngle(
+        angle.azimuth,
+        angle.elevation,
+        "overview",
+        false,
+        angle.zoom,
+      );
     },
     setCameraPreset(preset) {
       const angle =

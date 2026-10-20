@@ -1,4 +1,5 @@
 "use client";
+import { gameConfig, CONFIG_LIMITS } from "@/config/config";
 import { memo, useEffect, useRef } from "react";
 import {
   useGameServices,
@@ -122,8 +123,8 @@ const CameraControls = memo(function CameraControls() {
           <input
             aria-label="Camera tilt"
             type="range"
-            min="45"
-            max="89"
+            min={CONFIG_LIMITS.elevation.min}
+            max={CONFIG_LIMITS.elevation.max}
             step="1"
             value={state.camera.elevation}
             onChange={(event) =>
@@ -139,8 +140,8 @@ const CameraControls = memo(function CameraControls() {
             aria-label="Camera zoom"
             aria-valuetext={`${Math.round(state.camera.zoom * 100)} percent`}
             type="range"
-            min="50"
-            max="200"
+            min={CONFIG_LIMITS.zoom.min * 100}
+            max={CONFIG_LIMITS.zoom.max * 100}
             step="5"
             value={Math.round(state.camera.zoom * 100)}
             onChange={(event) =>
@@ -168,7 +169,10 @@ export function GameControls() {
               <span>Flick power</span>
               <span>
                 {Math.round(
-                  state.power.value * (state.power.surge ? 160 : 100),
+                  state.power.value *
+                    (state.power.surge
+                      ? gameConfig.physics.surgeMultiplier * 100
+                      : 100),
                 )}
                 {state.power.surge ? " SURGE" : ""}
               </span>
@@ -189,7 +193,7 @@ export function GameControls() {
         {state.surge.visible && (
           <button
             className="tb"
-            title="Surge ×1.6 · once per round"
+            title={`Surge ×${gameConfig.physics.surgeMultiplier} · once per round`}
             aria-pressed={state.surge.enabled}
             disabled={!state.surge.available}
             onClick={() => services.controller?.toggleSurge()}
@@ -197,7 +201,7 @@ export function GameControls() {
             <span className="tb-icon" aria-hidden="true">
               ✦
             </span>
-            <span>Surge ×1.6</span>
+            <span>Surge ×{gameConfig.physics.surgeMultiplier}</span>
           </button>
         )}
         <div id="turn" data-who={state.turn.who}>

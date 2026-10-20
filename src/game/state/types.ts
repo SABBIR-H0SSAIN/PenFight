@@ -1,7 +1,7 @@
 import type { Difficulty, ShotAction } from "../contracts";
 import type { PenKind } from "@/features/pen/types";
 import type { SceneQuality } from "../scene/types";
-export type Algorithm = keyof typeof import("../ai/catalog.js").ALGORITHMS;
+export type Algorithm = import("../../config/config").ConfigAlgorithm;
 export type GameMode = "menu" | "pvp" | "vs" | "train" | "aivai";
 export type MenuView = "main" | "pvp" | "vs" | "train" | "aivai" | "settings";
 export type CameraPreset = "overview" | "top" | "side" | "player";

@@ -1,4 +1,5 @@
-/** DFS, DLS, IDDFS and bidirectional search over the finite shot-action tree. */
+import { gameConfig } from "../../../config/config.ts";
+/** DFS, DLS and IDDFS over the finite shot-action tree. */
 export function createUninformedStrategy({
   clamp,
   makeAction,
@@ -13,7 +14,6 @@ export function createUninformedStrategy({
   slice,
 }) {
   const maxDepth = LV.length;
-  const key = (choices) => choices.join(",");
   const actionFor = (state, me, choices) =>
     makeAction(
       state,
@@ -109,11 +109,9 @@ export function createUninformedStrategy({
     return { evaluated, found, cutoff };
   }
   function* depthSearch(state, me, cfg, ctx, mode) {
-    cfg = { ...cfg, leafBudget: Math.max(1, cfg.leafBudget ?? 90) };
-    const limit =
-      mode === "dfs"
-        ? maxDepth
-        : clamp(Math.floor(cfg.depthLimit ?? maxDepth), 0, maxDepth);
+    cfg = { ...gameConfig.ai.budgets[mode], ...cfg };
+    cfg.leafBudget = Math.max(1, cfg.leafBudget);
+    const limit = clamp(Math.floor(cfg.depthLimit ?? maxDepth), 0, maxDepth);
     let result;
     if (mode === "iddfs") {
       for (let depth = 0; depth <= limit; depth++) {
@@ -125,126 +123,5 @@ export function createUninformedStrategy({
     } else result = yield* depthPass(state, me, cfg, ctx, limit);
     return finish(state, me, ctx, result.evaluated, result.found);
   }
-  function* choicesFrom(prefix = []) {
-    if (prefix.length === maxDepth) {
-      yield prefix;
-      return;
-    }
-    for (let i = 0; i < LV[prefix.length]; i++)
-      yield* choicesFrom(prefix.concat(i));
-  }
-  function* bidirectional(state, me, cfg, ctx) {
-    const live = ctx.live,
-      evaluated = [],
-      goals = [];
-    const budget = Math.max(1, cfg.leafBudget ?? 90);
-    // Physics has no inverse transition. Define backward start states as verified
-    // complete shots, then traverse their actual action-prefix predecessors.
-    for (const choices of choicesFrom()) {
-      if (evaluated.length >= budget) break;
-      const act = actionFor(state, me, choices);
-      const result = { act, ...ev(state, me, act, ctx, 2) };
-      evaluated.push(result);
-      if (isGoal(result, cfg)) goals.push({ choices, result });
-      live.moves = movesFrom(evaluated, null);
-      Object.assign(live.extra, {
-        evaluated: evaluated.length,
-        goalCandidates: goals.length,
-      });
-      yield* slice(ctx);
-    }
-    live.nodes = [];
-    const nodes = new Map();
-    function addNode(choices) {
-      const k = key(choices);
-      if (nodes.has(k)) return nodes.get(k);
-      const parent = choices.length ? addNode(choices.slice(0, -1)) : null;
-      const node = {
-        id: live.nodes.length,
-        p: parent?.id ?? -1,
-        d: choices.length,
-        label: labelFor(choices),
-        order: 0,
-      };
-      live.nodes.push(node);
-      nodes.set(k, node);
-      return node;
-    }
-    addNode([]);
-    let forward = [[]],
-      backward = goals.slice(),
-      found = null,
-      order = 0;
-    const seenForward = new Set([""]),
-      seenBackward = new Map();
-    for (const goal of goals) {
-      seenBackward.set(key(goal.choices), goal.result);
-      const node = addNode(goal.choices);
-      node.goal = true;
-      node.v = goal.result.score;
-    }
-    let expanded = 0;
-    while (forward.length && backward.length && !found) {
-      const nextForward = [];
-      for (const choices of forward) {
-        addNode(choices).order = ++order;
-        ctx.nodes++;
-        expanded++;
-        if (seenBackward.has(key(choices))) {
-          found = seenBackward.get(key(choices));
-          break;
-        }
-        if (choices.length < maxDepth)
-          for (let i = 0; i < LV[choices.length]; i++) {
-            const child = choices.concat(i),
-              k = key(child);
-            addNode(child);
-            if (seenForward.has(k)) continue;
-            seenForward.add(k);
-            nextForward.push(child);
-            if (seenBackward.has(k)) {
-              found = seenBackward.get(k);
-              live.extra.meetingDepth = child.length;
-              break;
-            }
-          }
-        yield* slice(ctx);
-        if (found) break;
-      }
-      forward = nextForward;
-      const nextBackward = [];
-      if (!found)
-        for (const entry of backward) {
-          addNode(entry.choices).order = ++order;
-          ctx.nodes++;
-          expanded++;
-          if (!entry.choices.length) continue;
-          const choices = entry.choices.slice(0, -1),
-            k = key(choices);
-          if (seenBackward.has(k)) continue;
-          seenBackward.set(k, entry.result);
-          nextBackward.push({ choices, result: entry.result });
-          if (seenForward.has(k)) {
-            found = entry.result;
-            live.extra.meetingDepth = choices.length;
-            break;
-          }
-          yield* slice(ctx);
-        }
-      backward = nextBackward;
-      Object.assign(live.extra, {
-        frontier: forward.length + backward.length,
-        forwardFrontier: forward.length,
-        backwardFrontier: backward.length,
-        expanded,
-      });
-      yield* slice(ctx);
-    }
-    Object.assign(live.extra, {
-      frontier: forward.length + backward.length,
-      expanded,
-    });
-    return finish(state, me, ctx, evaluated, found);
-  }
-  return { depthSearch, bidirectional };
+  return { depthSearch };
 }

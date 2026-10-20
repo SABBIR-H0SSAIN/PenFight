@@ -1,4 +1,5 @@
 "use client";
+import { gameConfig, CONFIG_LIMITS } from "@/config/config";
 import { useState } from "react";
 import {
   useGameServices,
@@ -11,10 +12,12 @@ import type { Difficulty } from "@/game/contracts";
 export function BenchmarkPanel() {
   const services = useGameServices(),
     { benchmark } = useGameState(["benchmark"]);
-  const [a, setA] = useState<Algorithm>("fuzzy"),
-    [b, setB] = useState<Algorithm>("mcts");
-  const [rounds, setRounds] = useState(20),
-    [level, setLevel] = useState<Difficulty>("advanced");
+  const [a, setA] = useState<Algorithm>(gameConfig.ai.benchmark.algorithmA),
+    [b, setB] = useState<Algorithm>(gameConfig.ai.benchmark.algorithmB);
+  const [rounds, setRounds] = useState(gameConfig.ai.benchmark.rounds),
+    [level, setLevel] = useState<Difficulty>(
+      gameConfig.ai.benchmark.difficulty,
+    );
   const result = benchmark.result;
   async function run() {
     try {
@@ -53,7 +56,7 @@ export function BenchmarkPanel() {
           value={rounds}
           onChange={(event) => setRounds(Number(event.target.value))}
         >
-          {[10, 20, 40].map((count) => (
+          {CONFIG_LIMITS.benchmarkRounds.map((count) => (
             <option key={count} value={count}>
               {count} rounds
             </option>

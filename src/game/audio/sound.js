@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 import { AUDIO_ASSETS, CONTACT_SOUNDS, materialProfile } from "./catalog.js";
 
 /** Recorded tabletop foley, with per-session ownership and a quiet offline fallback. */
@@ -15,8 +16,8 @@ export function createSound({
     ambience = null,
     abort = null,
     generation = 0,
-    volume = 0.7,
-    ambOn = true,
+    volume = gameConfig.settings.vol,
+    ambOn = gameConfig.settings.amb,
     paused = false,
     ready = Promise.resolve(),
     fallback = null,
@@ -146,8 +147,16 @@ export function createSound({
   function startAmbience() {
     if (!ctx || !ambOn) return;
     for (const [key, gain, cutoff] of [
-      ["fan", 0.075, 1600],
-      ["classroom", 0.022, 1900],
+      [
+        "fan",
+        gameConfig.audio.ambience.fan.gain,
+        gameConfig.audio.ambience.fan.cutoff,
+      ],
+      [
+        "classroom",
+        gameConfig.audio.ambience.classroom.gain,
+        gameConfig.audio.ambience.classroom.cutoff,
+      ],
     ]) {
       const buffer = buffers.get(key);
       if (!buffer || ambientLoops.has(key)) continue;
@@ -193,7 +202,7 @@ export function createSound({
   function play(key, { gain = 0.4, pan = 0, pen, rate = 1 } = {}) {
     if (!ctx || paused || ctx.state !== "running" || volume === 0) return;
     const transient = [...voices].filter((v) => !v.loop);
-    if (transient.length >= 16) transient[0].stop();
+    if (transient.length >= gameConfig.audio.maxVoices) transient[0].stop();
     const profile = materialProfile(pen),
       pitch = profile.rate * rate * (0.97 + random() * 0.06),
       buffer = buffers.get(key);

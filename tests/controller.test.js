@@ -2,6 +2,61 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { controllerFixture } from "./helpers/controller.js";
 
+test("the menu desk uses Matador defaults and respects changed local pen selections", (t) => {
+  const f = controllerFixture(t);
+  const types = [];
+  f.world.setPenType = (slot, kind, color) => {
+    types[slot] = { kind, color };
+  };
+  f.controller.openMenu();
+  assert.deepEqual(
+    types.map(({ kind }) => kind),
+    ["matador_hs", "matador_hs"],
+  );
+  const preferences = structuredClone(f.ui.get().preferences);
+  preferences.pvp.pen1 = { pen: "gel", colors: {} };
+  preferences.pvp.pen2 = {
+    pen: "matador_smoothy",
+    colors: { matador_smoothy: "#123456" },
+  };
+  f.ui.set({ preferences });
+  f.controller.openMenu();
+  assert.deepEqual(
+    types.map(({ kind }) => kind),
+    ["gel", "matador_smoothy"],
+  );
+  assert.equal(types[1].color, "#123456");
+});
+
+test("a configured zero AI think time does not add the fallback 800 ms pause", async (t) => {
+  const f = controllerFixture(t);
+  f.engine.LEVELS = structuredClone(f.engine.LEVELS);
+  f.engine.LEVELS.advanced.think = 0;
+  f.engine.decide = function* () {
+    return {
+      action: { ang: -Math.PI / 2, pow: 0.2, off: 0 },
+      info: { moves: [], nodes: [], stats: {} },
+    };
+  };
+  f.controller.start("aivai");
+  let started = false,
+    thinkingFrames = 0;
+  for (
+    let i = 0;
+    i < 100 && !f.soundCalls.some((c) => c.method === "flick");
+    i++
+  ) {
+    await f.advance();
+    if (f.ui.get().thinking) started = true;
+    if (started) thinkingFrames++;
+  }
+  assert.ok(f.soundCalls.some((c) => c.method === "flick"));
+  assert.ok(
+    thinkingFrames < 16,
+    "zero think time must not become another 800 ms wait",
+  );
+});
+
 test("simulation speeds accept only supported multipliers", async (t) => {
   const f = controllerFixture(t);
   f.controller.start("aivai");

@@ -1,5 +1,6 @@
 "use client";
 import { useGamePreferences } from "@/features/game/runtime/GameProvider";
+import { CONFIG_LIMITS } from "@/config/config";
 import type { GameSettings } from "@/game/state/types";
 import { MenuPage } from "./MenuPage";
 const toggles = [
@@ -19,7 +20,7 @@ export function SettingsMenuView() {
         Player name
         <input
           type="text"
-          maxLength={14}
+          maxLength={CONFIG_LIMITS.nameLength}
           autoComplete="off"
           value={settings.name}
           onChange={(event) => setSettings({ name: event.target.value })}
@@ -72,8 +73,8 @@ export function SettingsMenuView() {
         Desk friction <span>{Math.round(settings.friction * 100)}%</span>
         <input
           type="range"
-          min={80}
-          max={110}
+          min={CONFIG_LIMITS.friction.min * 100}
+          max={CONFIG_LIMITS.friction.max * 100}
           step={1}
           value={Math.round(settings.friction * 100)}
           onChange={(event) =>

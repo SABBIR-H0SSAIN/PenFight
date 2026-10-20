@@ -1,3 +1,4 @@
+import { gameConfig } from "../../../config/config.ts";
 import { Heap } from "../priority-queue.js";
 /** search decision logic; no React or browser state. */
 export function createSearchStrategy({
@@ -40,8 +41,16 @@ export function createSearchStrategy({
     return g;
   }
   function* informed(state, me, cfg, ctx, astar) {
+    cfg = { ...gameConfig.ai.budgets[astar ? "astar" : "best"], ...cfg };
     const live = ctx.live,
-      budget = cfg.evalBudget || 110;
+      budget = cfg.evalBudget;
+    const depthLimit = clamp(
+      Math.floor(cfg.depthLimit ?? LV.length),
+      0,
+      LV.length,
+    );
+    live.extra.depthLimit = depthLimit;
+    live.extra.cutoff = false;
     const threshold = cfg.goal == null ? 2 / 3 : clamp(cfg.goal, 0, 1);
     live.nodes.push({ id: 0, p: -1, d: 0, label: "start", order: 0 });
     const heap = new Heap();
@@ -58,11 +67,15 @@ export function createSearchStrategy({
       ctx.nodes++;
       // A complete action is a candidate, not automatically a successful goal.
       // Only its simulated knock-off probability determines whether it qualifies.
-      if (n.ch.length === 4) continue;
+      if (n.ch.length === LV.length) continue;
+      if (n.ch.length >= depthLimit) {
+        live.extra.cutoff = true;
+        continue;
+      }
       for (let i = 0; i < LV[n.ch.length] && spent < budget; i++) {
         const ch = n.ch.concat(i),
           act = nodeAction(state, me, ch),
-          leaf = ch.length === 4;
+          leaf = ch.length === LV.length;
         const r = ev(state, me, act, ctx, leaf ? 3 : 1);
         spent++;
         const g = nodeG(ch),

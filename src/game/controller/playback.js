@@ -1,10 +1,11 @@
+import { gameConfig } from "../../config/config.ts";
 /** A single brief impact accent: adjacent collisions must never multiply slowdown. */
 export function impactPlaybackRate(time, impactTime, speed = 1) {
   const accent =
     impactTime != null &&
-    time >= impactTime - 0.025 &&
-    time < impactTime + 0.13;
-  return speed * (accent ? 0.75 : 1);
+    time >= impactTime - gameConfig.playback.impactLead &&
+    time < impactTime + gameConfig.playback.impactDuration;
+  return speed * (accent ? gameConfig.playback.impactSpeed : 1);
 }
 /** Show just the decisive moment, not the entire shot again in slow motion. */
 export function replayWindow(events, duration) {
@@ -14,7 +15,7 @@ export function replayWindow(events, duration) {
   );
   const focus = out?.t ?? hits.at(-1)?.t ?? duration;
   return {
-    start: Math.max(0, focus - 0.4),
-    end: Math.min(duration, focus + 0.55),
+    start: Math.max(0, focus - gameConfig.playback.replayLead),
+    end: Math.min(duration, focus + gameConfig.playback.replayTail),
   };
 }

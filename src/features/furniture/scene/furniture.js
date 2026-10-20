@@ -1,3 +1,4 @@
+import { gameConfig } from "../../../config/config.ts";
 import { drawBenchWriting } from "./bench-writing.js";
 import { woodUv } from "./wood-uv.js";
 import { createOriginalBenchTexture } from "../../table/scene/original-bench-texture.js";
@@ -60,7 +61,8 @@ export function createFurnitureLibrary(deps) {
         { ...deps, W: 60, H: 100 },
         surface,
         {
-          resolution: R.quality === "low" ? 512 : 1024,
+          resolution:
+            gameConfig.graphics.quality[R.quality || "high"].woodTextureSize,
         },
       );
       const map = configureBenchTexture(deps.ctex(canvas), deps);
