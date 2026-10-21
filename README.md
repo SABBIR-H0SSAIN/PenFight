@@ -52,13 +52,15 @@ Play against a friend, challenge an AI opponent, or watch two algorithms compete
 3. Try grabbing near either end of the barrel to change the spin.
 4. Keep your pen on the desk while knocking your opponent's pen off.
 
-The scoreboard shows the match target and current round. Use the in-game menu to pause, resume, or return to mode selection.
+The scoreboard shows the match target and current round. Use the in-game menu to pause, resume, or return to mode selection. The opponent in human-vs-AI is labelled **AI**.
+
+Open the camera icon for Overview, Top, Side, Player, rotation, tilt, zoom, and Reset. Drag away from either pen to orbit; areas near either pen are protected from accidental rotation. Pinch with two fingers to zoom, or use trackpad pinch (Ctrl+wheel in Chromium; gesture events in Safari). Zoom ranges from 50% to 200%. Manual camera changes turn Follow off; enable Follow again to track the active pen. Choose **Pin view** in the camera panel to freeze the current view during the match. While pinned, camera gestures, presets, zoom, Follow and automatic replay/turn cameras cannot move it; pen aiming still works. Select **Pinned** to unpin. Pause/settings retain the pin; returning to the main menu or starting a new match clears it (unless configured to start pinned).
 
 ## AI algorithms
 
-The game includes nine algorithms, grouped by approach:
+The game includes eight algorithms, grouped by approach:
 
-- **Uninformed search:** Depth-First Search (DFS), Depth-Limited Search (DLS), Iterative Deepening DFS (IDDFS), and Bidirectional Search.
+- **Uninformed search:** Depth-First Search (DFS), Depth-Limited Search (DLS), and Iterative Deepening DFS (IDDFS).
 - **Informed search:** Greedy Best-First Search and A*.
 - **Adversarial and simulation search:** Minimax and Monte Carlo Tree Search (MCTS).
 - **Rule-based control:** Fuzzy Logic.
@@ -71,7 +73,7 @@ Difficulty also affects execution noise and the chance of choosing a weaker shot
 Search builds a shot from four choices: target, angle, power, and spin. Candidate shots are evaluated by the same physics engine used during play.
 
 - **DLS and IDDFS** search this four-level action tree. DLS reports a cutoff when its depth limit prevents a complete shot.
-- **Bidirectional search** first identifies goal shots through simulation, then meets forward and backward frontiers along action prefixes. It does not reverse physical pen motion.
+- **Bidirectional search was removed:** discovering winning shots first made the later forward/backward prefix search redundant; dissipative game physics has no practical inverse transition.
 - **A*** uses shot effort as its path cost and simulated shot quality as its heuristic. The heuristic is not admissible, so this budgeted adaptation does not guarantee an optimal path.
 - **Minimax** alternates MAX and MIN, choosing against worst-case replies within a root shortlist and depth limit.
 - **MCTS** uses UCB selection, expansion, random rollouts, and backpropagation with a bounded action shortlist and rollout depth.
@@ -103,11 +105,16 @@ npm start
 
 Player preferences and game settings are saved locally in the browser.
 
+### Configuration
+
+Game defaults live in separate files under [`src/config/`](src/config/README.md): settings, preferences, matches, camera, input, physics, playback, AI, pens, audio, and graphics. [`config.ts`](src/config/config.ts) combines these sections into one validated configuration. Environment overrides are optional: copy [`.env.example`](.env.example) to `.env.local` and uncomment the values you need. See the [configuration guide](src/config/README.md) for JSON overrides, validation, and saved-preference precedence. Restart development or rebuild production after changing environment values.
+
 ## Project structure
 
 ```text
 src/
 ├── app/                 Next.js routes, layout, and global styles
+├── config/              Unified defaults and optional environment overrides
 ├── features/
 │   ├── game/
 │   │   ├── ui/          Menus, HUD, controls, dialogs, and game styles
@@ -116,6 +123,7 @@ src/
 │   ├── pen/             Pen catalogue, models, and selection UI
 │   ├── character/       Character geometry, animation, and arm movement
 │   ├── table/           Playable desk geometry and textures
+│   ├── furniture/       Shared desk/chair geometry and bench materials
 │   └── classroom/       Room, furniture, lighting, and background props
 └── game/
     ├── ai/              Search strategies, evaluation, and headless matches
@@ -123,7 +131,7 @@ src/
     ├── controller/      Match flow, input, and playback
     ├── state/           UI snapshots, preferences, and persistence
     ├── scene/           Three.js rendering and resource cleanup
-    └── audio/           Procedural sound and ambience
+    └── audio/           Recorded sound, movement audio, and ambience
 ```
 
 The AI and physics modules run without React or a browser. React manages the interface and scene lifecycle; the controller updates pen and character transforms directly during animation frames. AI Lab loads on demand.
@@ -148,7 +156,9 @@ This runs ESLint, TypeScript, the Node.js test suite, and a production build. In
 | `npm run build`     | Build the production application.                             |
 | `npm run format`    | Format source, tests, and documentation with Prettier.        |
 
-Tests cover all supported algorithms, depth cutoffs, bidirectional frontier meetings, worst-case minimax decisions, pen physics, character poses, state isolation, cleanup, and benchmark cancellation. Rendering changes should also be checked in the browser.
+Tests cover all supported algorithms, physics, character geometry, camera framing, mouse/touch/stylus safety, pinch cancellation, follow mode, sample-timestamp playback, preference recovery, configuration boundaries and environment precedence. See [Testing](docs/testing.md) for the suite map, focused commands, and the browser/device checklist. Headless tests do not establish visual sharpness, font layout, or native Safari/Chromium gesture delivery.
+
+For hand animation changes, run `npm run test:hand-motion`. The [real-rig hand audit](docs/hand-motion-verification.md) records contact/motion checks and the remaining far-side reach limitation.
 
 ## Assets
 
@@ -156,4 +166,4 @@ Gameplay uses local recorded pen foley, movement-driven friction, and quiet clas
 
 The Matador High School model is served from `public/models/pens/`. Its provenance and handling notes are recorded in the [pen asset guide](public/models/pens/README.md).
 
-The current characters use procedural geometry and do not require external head scans or skin textures.
+The current characters use procedural geometry and do not require external head scans or skin textures. All desks and chairs share the original matte school-bench finish. The floor retains furniture shadows without window-light overlays, reflective patches, or fan rotation shadows. [Texture credits](public/textures/furniture/CREDITS.md) distinguish the archived photograph from the active procedural material. The local brand mark is in `public/brand/`, with its app icon in `src/app/icon.svg`.

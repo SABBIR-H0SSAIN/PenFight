@@ -96,6 +96,7 @@ export interface GameUiState {
   mode: GameMode;
   view: MenuView;
   menuVisible: boolean;
+  menuTurning: boolean;
   paused: boolean;
   fromPause: boolean;
   end: { title: string; subtitle: string; won: boolean } | null;

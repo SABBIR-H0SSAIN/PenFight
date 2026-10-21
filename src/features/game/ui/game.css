@@ -179,6 +179,29 @@ textarea {
   font-size: 13px;
   min-height: 30px;
 }
+.camera-panel-actions {
+  display: flex;
+  gap: 5px;
+}
+.camera-panel-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.camera-panel-heading button[aria-pressed="true"] {
+  color: #fff;
+  background: #274f80;
+}
+.camera-controls[data-pinned="true"] summary {
+  color: #fff;
+  background: #274f80;
+  border-color: #274f80;
+}
+.camera-controls button:disabled,
+.camera-controls input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .camera-presets {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1201,65 +1224,17 @@ th {
 #menu .col::-webkit-scrollbar-track {
   background: transparent;
 }
+/* Space whole loops evenly; never crop a partial loop at the page's bottom. */
 #menu .spiral {
   position: absolute;
-  left: -48px;
+  left: -18px;
   top: 16px;
   bottom: 16px;
-  width: 86px;
+  width: 54px;
   pointer-events: none;
   z-index: 4;
-}
-#menu .spiral::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0 12px,
-      rgba(92, 98, 105, 0.88) 12px 16px,
-      rgba(226, 232, 236, 0.96) 16px 19px,
-      rgba(76, 82, 89, 0.9) 19px 22px,
-      transparent 22px 100%
-    ),
-    repeating-radial-gradient(
-      circle at 57px 28px,
-      rgba(21, 20, 19, 0.98) 0 8px,
-      #faf8ee 8.5px 14px,
-      rgba(223, 228, 231, 0.96) 14px 15.8px,
-      transparent 16px 56px
-    );
-  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.18));
-}
-#menu .spiral::after {
-  content: "";
-  position: absolute;
-  left: 14px;
-  top: 8px;
-  bottom: 8px;
-  width: 48px;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0 10px,
-      rgba(121, 128, 136, 0.98) 10px 12px,
-      rgba(245, 248, 250, 0.98) 12px 21px,
-      rgba(102, 109, 118, 0.98) 21px 24px,
-      transparent 24px 56px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0 30%,
-      rgba(255, 255, 255, 0.72) 30% 46%,
-      rgba(119, 127, 136, 0.88) 46% 52%,
-      rgba(235, 239, 242, 0.96) 52% 66%,
-      rgba(98, 105, 112, 0.9) 66% 72%,
-      transparent 72%
-    );
-  border-radius: 999px;
-  opacity: 0.98;
-  clip-path: polygon(38% 0, 100% 0, 100% 100%, 38% 100%, 0 93%, 0 7%);
+  background: url("/textures/notebook-binding.svg") 0 0 / 54px 56px;
+  background-repeat: no-repeat space;
 }
 #menu .col::after {
   content: "";
@@ -1473,17 +1448,11 @@ th {
   }
 }
 #menu .pen-pointer {
-  position: absolute;
-  z-index: 4;
-  right: 12px;
-  top: 290px;
-  width: clamp(76px, 19vw, 112px);
-  height: 31px;
+  display: block;
+  width: 100%;
+  aspect-ratio: 155 / 34;
   pointer-events: none;
-  filter: drop-shadow(2px 3px 2px rgba(33, 44, 50, 0.28));
-  transform: rotate(-13deg);
-  transition: top 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
-  opacity: 0.92;
+  filter: drop-shadow(1px 2px 1px rgba(33, 44, 50, 0.22));
 }
 #menu .pen-pointer svg {
   width: 100%;
@@ -1776,7 +1745,7 @@ th {
   clip-path: polygon(0 0, 100% 45%, 100% 55%, 0 100%);
 }
 #menu .pen-preview.pen-matador_smoothy .tip {
-  right: -2px;
+  right: 0;
   top: 10px;
   width: 5px;
   height: 3px;
@@ -2068,50 +2037,11 @@ th {
     border-radius: 8px 14px 14px 8px;
   }
   #menu .spiral {
-    left: -31px;
-    width: 62px;
+    left: -15px;
+    width: 45px;
     top: 18px;
     bottom: 18px;
-  }
-  #menu .spiral::before {
-    background:
-      linear-gradient(
-        90deg,
-        transparent 0 9px,
-        rgba(92, 98, 105, 0.88) 9px 12px,
-        rgba(226, 232, 236, 0.96) 12px 14px,
-        rgba(76, 82, 89, 0.9) 14px 16px,
-        transparent 16px 100%
-      ),
-      repeating-radial-gradient(
-        circle at 40px 24px,
-        rgba(24, 23, 20, 0.96) 0 6.8px,
-        #fbfaf1 7.2px 11.5px,
-        rgba(223, 228, 231, 0.96) 11.7px 13px,
-        transparent 13.2px 48px
-      );
-  }
-  #menu .spiral::after {
-    left: 8px;
-    width: 34px;
-    background:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0 8px,
-        rgba(121, 128, 136, 0.98) 8px 9px,
-        rgba(245, 248, 250, 0.98) 9px 17px,
-        rgba(102, 109, 118, 0.98) 17px 19px,
-        transparent 19px 48px
-      ),
-      linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0 30%,
-        rgba(255, 255, 255, 0.72) 30% 46%,
-        rgba(119, 127, 136, 0.88) 46% 52%,
-        rgba(235, 239, 242, 0.96) 52% 66%,
-        rgba(98, 105, 112, 0.9) 66% 72%,
-        transparent 72%
-      );
+    background-size: 45px 48px;
   }
   #menu .col::after {
     left: 20px;
@@ -2143,11 +2073,6 @@ th {
   #menu .two {
     grid-template-columns: 1fr;
   }
-  #menu .pen-pointer {
-    right: -6px;
-    width: 72px;
-    opacity: 0.84;
-  }
   #menu .pc-row {
     grid-template-columns: 1fr !important;
   }
@@ -2167,10 +2092,6 @@ th {
   #menu .ink-num {
     width: 26px;
   }
-  #menu .pen-pointer {
-    width: 58px;
-    right: -8px;
-  }
   #menu .written-options .mbtn::after {
     left: 34px;
   }
@@ -2178,9 +2099,6 @@ th {
 @media (prefers-reduced-motion: reduce) {
   #menu .view {
     animation: none;
-  }
-  #menu .pen-pointer {
-    transition: none;
   }
   #menu .written-options .mbtn.ink-picked::after {
     animation: none;

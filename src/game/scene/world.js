@@ -577,6 +577,7 @@ export function createWorld(PF) {
   R.setPen = (i, state, time, scale) => R.pens[i].setState(state, time, scale);
   R.dispose = function () {
     R.initialized = false;
+    R.benchTextureCanvases?.clear();
     if (R.scene) {
       disposeObjectTree(R.scene);
       R.scene.clear();

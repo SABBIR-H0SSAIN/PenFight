@@ -46,6 +46,36 @@ test("an overbalanced pen lands, scores once and releases the hand before playba
   assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, 1);
 });
 
+test("page turns suspend classroom rendering and resume without blocking gameplay", async (t) => {
+  const f = controllerFixture(t, { stepMs: 16 });
+  let renders = 0;
+  const ambientSteps = [];
+  f.world.render = () => renders++;
+  f.world.ambient = (dt) => ambientSteps.push(dt);
+  await f.advance();
+  assert.equal(renders, 1);
+  f.ui.set({ menuTurning: true });
+  await f.advance(20);
+  assert.equal(renders, 1);
+  assert.equal(ambientSteps.length, 1);
+  f.ui.set({ menuTurning: false });
+  await f.advance();
+  assert.equal(renders, 2);
+  assert.equal(ambientSteps.length, 2);
+  assert.ok(ambientSteps[1] < 0.02, "resuming does not accumulate turn time");
+  f.controller.start("pvp");
+  f.ui.set({ menuTurning: true });
+  await f.advance();
+  assert.equal(renders, 3, "a hidden menu cannot block an active match");
+  f.controller.pause();
+  f.controller.settings();
+  await f.advance(10);
+  assert.equal(renders, 3, "settings turns also leave the paused frame intact");
+  f.ui.set({ menuTurning: false });
+  await f.advance();
+  assert.equal(renders, 4);
+});
+
 test("the menu desk uses Matador defaults and respects changed local pen selections", (t) => {
   const f = controllerFixture(t);
   const types = [];

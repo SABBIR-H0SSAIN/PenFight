@@ -1,6 +1,10 @@
+@import "./fonts.css";
 @import "../features/game/ui/game.css";
 @import "../features/pen/ui/pen.css";
 @import "../features/game/ui/game-ui.css";
+@import "../features/game/ui/notebook-pages.css";
+@import "../features/pen/ui/pen-selection.css";
+@import "../features/game/ui/game-loading.css";
 :root {
   color-scheme: dark;
   font-family:
@@ -57,14 +61,83 @@ a {
   letter-spacing: 0.02em;
   font-size: 15px;
 }
-.app-brand-mark {
-  display: grid;
-  width: 23px;
-  height: 23px;
-  place-items: center;
-  border-radius: 8px;
-  background: #f3d999;
-  color: #30281a;
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  color: #14243a;
+}
+.brand-logo-mark {
+  display: block;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+}
+.brand-logo-type {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.brand-logo-name {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: clamp(30px, 5vw, 42px);
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.065em;
+  white-space: nowrap;
+}
+.brand-logo-name > span {
+  color: #2463eb;
+}
+.brand-logo-arena {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font:
+    600 10px/1 "Schibsted Grotesk",
+    sans-serif;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+.brand-logo-arena::before,
+.brand-logo-arena::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: currentColor;
+  opacity: 0.5;
+}
+.main-menu-brand {
+  margin: 12px 0 7px;
+  padding-left: 8px;
+  line-height: 1;
+}
+.brand-logo--compact {
+  gap: 7px;
+  color: #f7f4eb;
+}
+.brand-logo--compact .brand-logo-mark {
+  width: 32px;
+  height: 32px;
+}
+.brand-logo--compact .brand-logo-name {
+  font-size: 21px;
+}
+.brand-logo--compact .brand-logo-name > span {
+  color: #5797ff;
+}
+.brand-logo--compact .brand-logo-arena {
+  margin-top: 3px;
+  gap: 6px;
+  font-size: 6px;
+}
+.app-brand:focus-visible {
+  outline: 2px solid #5797ff;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 .app-caption {
   color: #b4b7ae;
@@ -74,7 +147,7 @@ a {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(100dvh - 42px);
+  height: 100dvh;
   background: #20231f;
 }
 .game-runtime {
@@ -134,9 +207,6 @@ a {
   }
   .app-caption {
     display: none;
-  }
-  .game-area {
-    height: calc(100dvh - 38px);
   }
 }
 

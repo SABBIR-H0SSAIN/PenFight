@@ -367,6 +367,18 @@ export function createOriginalBenchTexture(
     options.resolution ||
     gameConfig.graphics.quality[R.quality || "high"].woodTextureSize;
   const h = Math.round((w * H) / W);
+  // Share only the immutable painted image, never a disposable GPU texture.
+  // The cache belongs to one world and is released when that world is disposed.
+  const cache = (R.benchTextureCanvases ||= new Map());
+  const cacheKey = JSON.stringify([
+    "school-desk-inscriptions-v5-drawn-strokes",
+    w,
+    h,
+    surface,
+    !!options.background,
+    options.background ? options.variation || 0 : 0,
+  ]);
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
   const carve = [
     {
       t: "Sabbir was here",
@@ -438,8 +450,12 @@ export function createOriginalBenchTexture(
   // Resample upward once so mipmaps retain the original longitudinal detail.
   const potWidth = 2 ** Math.ceil(Math.log2(w));
   const potHeight = 2 ** Math.ceil(Math.log2(h));
-  if (w === potWidth && h === potHeight) return painted;
+  if (w === potWidth && h === potHeight) {
+    cache.set(cacheKey, painted);
+    return painted;
+  }
   const canvas = cvs(potWidth, potHeight);
   canvas.getContext("2d").drawImage(painted, 0, 0, potWidth, potHeight);
+  cache.set(cacheKey, canvas);
   return canvas;
 }

@@ -10,6 +10,7 @@ export function createUiStore() {
     mode: "menu",
     view: "main",
     menuVisible: true,
+    menuTurning: false,
     paused: false,
     fromPause: false,
     end: null,

@@ -1,0 +1,123 @@
+/* Size cards against the space inside the notebook, including split pickers. */
+#menu .pen-selector {
+  min-width: 0;
+  width: 100%;
+  container-type: inline-size;
+}
+#menu .pen-selector .pen-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 10px;
+  padding-left: 0;
+  min-width: 0;
+}
+#menu .pen-selector .pen-opt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 28px 12px 12px;
+}
+#menu .pen-selector .pen-preview {
+  width: 84px;
+  height: 22px;
+  max-width: 100%;
+  margin: 0;
+  transform: none;
+}
+#menu .pen-selector .pen-copy {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+#menu .pen-selector .pen-copy small {
+  line-height: 1.35;
+}
+#menu .pen-selector .pen-color-box {
+  min-width: 0;
+  max-width: 100%;
+  margin-left: 0;
+}
+#menu .pen-selector .pc-top {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+#menu .pen-selector .pc-name {
+  overflow-wrap: anywhere;
+}
+#menu .pen-selector .pc-row {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  min-width: 0;
+}
+#menu .pen-selector .pc-input-label {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+#menu .pen-selector .pc-input {
+  flex: none;
+}
+#menu .two > section {
+  min-width: 0;
+}
+@container (max-width: 380px) {
+  #menu .pen-selector .pen-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #menu .pen-selector .pen-opt {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 12px;
+  }
+  #menu .pen-selector .pc-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+@container (max-width: 240px) {
+  #menu .pen-selector .pen-opt {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+/* A reserved indicator slot keeps the pointing pen clear of the menu label. */
+#menu .written-options {
+  container-type: inline-size;
+}
+#menu .written-options .mbtn {
+  gap: 12px;
+}
+#menu .written-options .menu-choice-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.2;
+}
+#menu .menu-choice-label .ink-num {
+  flex: 0 0 28px;
+  width: 28px;
+}
+#menu .menu-choice-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#menu .menu-choice-indicator {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 0 0 76px;
+  height: 28px;
+}
+@container (max-width: 300px) {
+  #menu .menu-choice-indicator {
+    flex-basis: 54px;
+  }
+  #menu .written-options .mbtn {
+    gap: 8px;
+  }
+}

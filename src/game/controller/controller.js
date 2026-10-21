@@ -1706,9 +1706,12 @@ export function createController({
   function frame(ts) {
     if (disposed) return;
     scope.frame(frame);
-    publishCamera();
     let dt = Math.min(DTMAX, (ts - last) / 1000);
     last = ts;
+    // A menu turn needs the compositor; keep the last WebGL frame until it ends.
+    // Advance the timestamp so the scene resumes without a catch-up jump.
+    if (ui.get().menuVisible && ui.get().menuTurning) return;
+    publishCamera();
     perf.acc += dt;
     perf.n++;
     if (perf.acc >= 1) {

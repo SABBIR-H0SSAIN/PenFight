@@ -90,7 +90,7 @@ export function SettingsMenuView() {
         Lower friction means more sliding. Applies to both pens.
       </div>
       {toggles.map(([key, label]) => (
-        <label className="sw" key={key}>
+        <label className="sw settings-toggle" key={key}>
           {label}
           <input
             type="checkbox"

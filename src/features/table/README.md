@@ -8,4 +8,6 @@ Background furniture, walls, posters, floor and environment textures are separat
 
 Wood canvases are expanded to power-of-two dimensions before upload so WebGL 1 cannot silently reduce their detail. `bench-texture-filter.js` configures hardware-supported anisotropic filtering (up to 16×) and trilinear mipmaps on all bench surfaces to retain angled grain while avoiding distant shimmer.
 
+The finished CPU canvas is cached per world, resolution, aspect ratio, finish and markings. Initial table/chair/classroom construction paints the matching surface once instead of four times. Each owner still creates and disposes its own GPU map. World disposal clears the canvas cache; changing resolution or finish selects a different entry.
+
 `src/config/graphics.ts` owns per-quality wood resolution and maximum anisotropy; `settings.ts` owns the initial oak/maple/walnut choice. Values reach both the main desk and surrounding furniture through `config.ts`. `tests/furniture.test.js` checks texture dimensions/filtering; `tests/scene.test.js` checks matching materials and finish changes without disposing another scene owner's resources. See [Testing](../../../docs/testing.md) for visual sharpness checks. The archived user wood photograph is documented separately in `public/textures/furniture/CREDITS.md` and is not the active bench finish.

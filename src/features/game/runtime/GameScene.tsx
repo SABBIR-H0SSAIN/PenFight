@@ -9,14 +9,12 @@ import { Classroom } from "@/features/classroom/Classroom";
 import { Table } from "@/features/table/Table";
 import { createController } from "@/game/controller/controller.js";
 import { useGameServices } from "./GameProvider";
-import { hydrateState } from "@/game/state/preferences.js";
 function Renderer() {
   const services = useGameServices();
   const canvas = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
     if (!canvas.current) return;
-    const { world, ui, engine } = services;
-    hydrateState(engine, ui);
+    const { world, ui } = services;
     const quality = ui.get().settings.quality;
     services.setCanvas(canvas.current);
     try {

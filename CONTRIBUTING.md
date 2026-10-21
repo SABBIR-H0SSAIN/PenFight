@@ -4,7 +4,7 @@
 
 1. Install the locked dependencies with `npm ci` and start `npm run dev`.
 2. Choose one feature or algorithm per branch/task. If using Git, create short-lived feature branches from the main branch.
-3. Read the feature README and `docs/architecture.md`. Put implementation beside the feature that owns it.
+3. Read the feature README, `docs/architecture.md`, and `docs/testing.md`. For Next.js changes, read the relevant installed guide under `node_modules/next/dist/docs/` as required by `AGENTS.md`. Put implementation beside the feature that owns it.
 4. Update affected callers when changing shared contracts. Avoid reformatting unrelated files.
 
 ## Naming and placement
@@ -25,18 +25,28 @@ Keep code beside the feature that owns it. Use PascalCase for React component fi
 
 ## Extending the game
 
-**New pen:** add metadata to `src/features/pen/catalog.js`, add its style/model builder under `src/features/pen/models`, and register the builder in `pen-models.js`. `PenKind` and menu options derive from the catalogue. Human-vs-AI must keep both players on the same model with contrasting colours. The selection and geometry regression tests automatically include catalogue entries.
+**New pen:** add metadata to `src/config/pens.ts` (`src/features/pen/catalog.js` re-exports the resolved values), add its style/model builder under `src/features/pen/models`, and register the builder in `pen-models.js`. `PenKind` and menu options derive from the catalogue. Human-vs-AI must keep both players on the same model with contrasting colours. The selection and geometry regression tests automatically include catalogue entries.
 
 **Character change:** use `scene/head.js` for face/expression, `scene/hand.js` for finger articulation, and `scene/character-scene.js` for body/IK. Keep arm lengths consistent with the rendered skeleton. `Character.tsx` accepts a slot and optional skin/shirt/pants/hair appearance props.
 
 **Table or room change:** edit the table builder for the playable desk, or classroom builder for walls, furniture, and props. Rendering reads table width/length from the physics engine. Changes to the playable dimensions must also account for spawn positions and reach/camera assumptions.
 
-**New AI:** add a strategy under `src/game/ai/strategies`, wire it in `algorithms.js`, add labels/presets in `catalog.js`, and add inspector prose in `src/features/ai-lab/ui/descriptions.ts`. Return an action plus inspection data. Long loops should yield through the provided slice helper so input and cancellation remain responsive. Extend the decision contract when new details are needed.
+**New AI:** add a strategy under `src/game/ai/strategies`, wire it in `algorithms.js`, add labels/presets and budget defaults in `src/config/ai.ts`, and add inspector prose in `src/features/ai-lab/ui/descriptions.ts`. Return an action plus inspection data. Long loops should yield through the provided slice helper so input and cancellation remain responsive. Extend the decision contract when new details are needed.
 
-**New screen/control:** create a TSX component in `src/features/game/ui/menus` or `src/features/game/ui/controls`. Reuse `MenuPage`, `PenSelector`, `AlgorithmSelect`, and `DifficultySelect`. Add preference fields/defaults/validation if the screen needs persisted choices.
+**New screen/control:** create a TSX component in `src/features/game/ui/menus` or `src/features/game/ui/controls`. Reuse `MenuPage`, `PenSelector`, `AlgorithmSelect`, and `DifficultySelect`. Add preference contracts, defaults in `src/config/preferences.ts`, and persistence validation if the screen needs saved choices.
 
 ## Before submitting changes
 
-Run `npm run check` for lint, TypeScript, regression tests, and the production build. The included GitHub Actions workflow runs the same checks for pushes and pull requests once the project is hosted there. Use `npm run format` to format source and tests. Then manually try a match, pause/resume, menu return, and the feature you changed. For rendering work also test low graphics quality and a narrow screen. For AI changes, inspect the decision and try Stop in the benchmark.
+Run `npm run check` for lint, TypeScript, regression tests, and the production build. The included GitHub Actions workflow runs the same checks for pushes and pull requests once the project is hosted there. Use `npm run format` to format source and tests. Then follow the browser/device matrix in `docs/testing.md`: try a match, pause/resume, menu return, and the feature you changed. Report any unavailable browser/device checks explicitly. For rendering work also test low graphics quality and a narrow screen. For AI changes, inspect the decision and try Stop in the benchmark.
 
 Describe what changed, where to extend it, which checks passed, and any visible limitations. Share screenshots for visual changes. Never commit `.next`, `node_modules`, or local environment files.
+
+## Configuration changes
+
+Edit the owning `src/config/*.ts` section, not the compatibility catalogues or `config.ts` aggregator. Consumers use the resolved `gameConfig`; only schema composition imports raw section defaults. Update `validation.ts` for new fields, `limits.ts` for supported menu/range changes, `environment.ts` for any new individual env alias, `.env.example`, and the configuration guide together. Keep public `process.env.NEXT_PUBLIC_*` accesses literal so Next.js can inline them. Native Node tests import TypeScript files with explicit `.ts` extensions; `allowImportingTsExtensions` is intentional.
+
+Add boundary/precedence tests and verify a configured value reaches its actual consumer. Zero and false must not be mistaken for absent values. Saved choices take precedence over configured defaults. Do not mutate shared configuration or a published preference object. Never add secrets to public configuration.
+
+## Hand movement changes
+
+Run `npm run test:hand-motion` for changes to hand meshes, IK, pose timing or flick sequencing. The ordinary controller fixture uses simplified character stubs; it cannot establish rendered hand movement. Use its `realCharacters: true` option for contact/animation checks. Preserve fixed arm lengths, validate actual mesh/tip movement, and test replacing motions and pause/cancel. Review the known far-side reach and live-rendering limitations in `docs/hand-motion-verification.md`.

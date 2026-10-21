@@ -32,7 +32,7 @@ Geometry and simulation helpers are JavaScript ES modules. Public component prop
 
 `GameProvider` allocates independent services per mounted game. The mutable high-frequency simulation state stays inside `createController`; the external UI store contains immutable snapshots. `useGameState(keys)` caches a selected snapshot and returns the same object until one of those keys changes. Updating flick power therefore does not invalidate a scoreboard or menu subscription. A frame updates Three.js transforms directly. AI inspection snapshots are throttled and copied only while the lab is open.
 
-`GameCanvas` uses `next/dynamic` with browser-only rendering for the heavy game bundle. The server still renders the application shell and loading state. AI Lab is another dynamic component loaded when opened. Pen builders cache textures and keep the same model across rounds when its model and colour are unchanged. Classroom LOD/background resources and graphics-quality settings remain in use.
+`GameCanvas` uses `next/dynamic` with browser-only rendering for the heavy game bundle. The server still renders the application shell and loading state. AI Lab is another dynamic component loaded when opened. Pen builders cache textures and keep the same model across rounds when its model and colour are unchanged. Classroom LOD/background resources and graphics-quality settings remain in use. Wood canvases use power-of-two dimensions and hardware-limited anisotropy with mipmaps. Floor and bench materials stay matte; windows and rotating fans do not project patterned shadows.
 
 ## Lifetimes
 
@@ -45,9 +45,10 @@ The renderer cleanup stops the controller before disposing the scene. Feature cl
 - **React integration:** `src/features/game/runtime` owns the provider, runtime surface, and scene composition.
 - **Menus and controls:** `src/features/game/ui`; mode screens in `ui/menus` and selectors in `ui/controls`. Controlled React UI; no injected markup.
 - **Character:** body/IK, head/expression and hand/finger modules in `src/features/character/scene`.
-- **Pen:** shared catalogue/types in `src/features/pen`, DOM controls in `ui`, and mesh builders in `models`.
+- **Configuration:** section defaults, optional public environment overrides, limits and validation in `src/config`; `config.ts` composes the resolved `gameConfig`.
+- **Pen:** compatibility catalogue/types in `src/features/pen`, DOM controls in `ui`, and mesh builders in `models`.
 - **Table:** the playable desk and wood texture in `src/features/table/scene`.
-- **Classroom:** background architecture, furniture and environment textures in `src/features/classroom/scene`.
+- **Classroom:** room architecture and props in `src/features/classroom/scene`; reusable desk/chair geometry and wood materials in `src/features/furniture/scene`.
 - **AI Lab:** React presentation, canvas drawing, and explanatory copy in `src/features/ai-lab/ui`; algorithms and benchmarks in `src/game/ai`. The AI installer delegates scoring to `evaluation.js`, search context to `context.js`, and headless matches to `match.js`. AI modules do not import presentation code or browser rendering APIs.
 - **UI state:** framework-independent store, snapshots, preferences, and persistence in `src/game/state`.
 - **Simulation:** physics in `src/game/physics`; coordination, input and match modes in `src/game/controller`.
@@ -58,3 +59,17 @@ Shared interface styles retain their established cascade in `src/features/game/u
 `GameDialog.tsx` owns the shared notebook dialog and keyboard focus handling; responsive HUD and dialog corrections live in `src/features/game/ui/game-ui.css`. `src/game/controller/playback.js` defines the single brief impact slowdown and cropped highlight window. Character reach easing and wrist constraints live in `src/features/character/motion.js`; articulated geometry and fixed-length arm IK remain in `src/features/character/scene`.
 
 Use feature folders to establish ownership. Place DOM screens/controls and their styles in `ui`, React service composition in the game feature’s `runtime`, and 3D geometry in the visual feature’s `scene` or `models`. Keep reusable simulation services in `src/game`; these folders do not import React or Next.js. The controller, renderer, persistence, and audio services may use browser APIs, while physics and AI remain headless. Import directly from the owning module so the lazily loaded AI Lab stays separate from the game bundle.
+
+## Configuration and persistence
+
+`src/config/config.ts` merges independent settings, preferences, match, camera, input, physics, playback, AI, pen, audio, and graphics modules. `environment.ts` reads explicit public aliases; `env.ts` applies validated partial JSON and alias overrides according to `validation.ts`. Unsupported fields/types/ranges retain their fallback. Raw defaults and schema have no DOM dependencies, so physics and AI can still run headlessly. Existing catalogues re-export resolved data for compatibility.
+
+Precedence is section defaults → `NEXT_PUBLIC_GAME_CONFIG` JSON → individual public variables → saved browser settings/preferences → in-game changes. UI stores clone their preferences. Hydration validates saved strings without coercing arrays into IDs or colours; legacy storage can override defaults only when present. All public environment values are captured during the Next.js build; production changes require rebuilding. See the [configuration guide](../src/config/README.md).
+
+## Input and playback
+
+The controller projects both pen barrels to CSS-pixel capsules before deciding between aiming and orbiting. A protected opponent-pen press cannot become an orbit. Aim power measures drag from the press position so a nearby tap cannot fire. Two tracked pointers cancel aim/orbit and start pinch zoom; an extra finger is ignored. The remaining pinch finger is blocked from orbiting until all tracked fingers lift. Trackpad wheel and Safari gesture events share the same bounded zoom action.
+
+Pause, settings, blur, viewport changes, lost capture, menu return and disposal cancel owned gestures. Camera pose stays fixed while aiming; manual camera input disables Follow, and Follow can be re-enabled. Playback binary-searches recorded physics timestamps, including uneven and duplicate final samples, rather than assuming a fixed recording interval. Impact slowdown and highlight windows read the playback section. See [Testing](testing.md) for coverage and device checks.
+
+Camera pinning freezes the exact rendered pose, including a transition or Follow pose, and disables manual/automatic camera motion while preserving pen aiming. The camera panel exposes an accessible Pin view/Pinned toggle; Follow and view controls are disabled while pinned. Resize can update desk framing without rotating the pinned view. Pause/settings and subsequent rounds retain it; menu return/new matches reset it. `src/config/camera.ts` can set `defaultPinned` for new matches. `tests/camera-pin.test.js` covers gestures, follow/replay/turn changes, aiming, cleanup and default pinning.

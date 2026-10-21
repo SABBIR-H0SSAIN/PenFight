@@ -12,6 +12,7 @@ import { createWorld } from "@/game/scene/world.js";
 import { createSound } from "@/game/audio/sound.js";
 import { createUiStore, selectUiStore } from "@/game/state/store";
 import { storage } from "@/game/state/storage.js";
+import { hydrateState } from "@/game/state/preferences.js";
 import type { GameController } from "@/game/controller/controller.js";
 import type {
   GamePreferences,
@@ -20,13 +21,19 @@ import type {
 } from "@/game/state/types";
 function createServices() {
   const engine = createGameEngine();
+  const ui = createUiStore();
+  // This provider is client-only. Hydrate before any feature builds its meshes,
+  // so saved finishes do not build the default surface and immediately replace it.
+  hydrateState(engine, ui);
+  const world = createWorld(engine);
+  world.deps.surface = ui.get().settings.tableSurface;
   let controller: GameController | null = null;
   let canvas: HTMLCanvasElement | null = null;
   return {
     engine,
-    world: createWorld(engine),
+    world,
     sound: createSound(),
-    ui: createUiStore(),
+    ui,
     get controller() {
       return controller;
     },
