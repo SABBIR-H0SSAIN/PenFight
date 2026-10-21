@@ -383,6 +383,7 @@ test("144 real-controller human flicks touch the pen across models, players, vie
             await f.advance(150);
             f.controller.setCameraPreset(view);
             await f.advance(50);
+            if (index % 2 === 0) f.controller.setCameraPinned(true);
             const angle = ((index % 12) * Math.PI) / 6,
               off = (offset * gameConfig.pens[pen].len) / 2,
               p = f.pens[who],

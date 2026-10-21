@@ -110,6 +110,7 @@ export interface GameUiState {
   banner: { title: string; subtitle: string } | null;
   replaying: boolean;
   camera: CameraAngle;
+  cameraPinned: boolean;
   power: { value: number; surge: boolean } | null;
   surge: { visible: boolean; available: boolean; enabled: boolean };
   fpsLabel: string;

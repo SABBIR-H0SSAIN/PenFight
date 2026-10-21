@@ -448,7 +448,7 @@ test("a drag can return to its origin without sticking at the dead zone", async 
   assert.equal(f.ui.get().camera.elevation, initial.elevation);
 });
 
-test("a second touch cannot hijack a camera drag or release its capture", async (t) => {
+test("a second touch zooms without rotating or turning its remaining finger into an orbit drag", async (t) => {
   const f = controllerFixture(t);
   f.controller.start("pvp");
   await f.advance(100);
@@ -472,7 +472,8 @@ test("a second touch cannot hijack a camera drag or release its capture", async 
   f.pointer("pointermove", { x: 105, y: 350 }, { pointerType: "touch" });
   f.pointer("pointerup", { x: 105, y: 350 }, { pointerType: "touch" });
   assert.equal(f.captured.size, 0);
-  assert.equal(f.ui.get().camera.azimuth, -5);
+  assert.equal(f.ui.get().camera.azimuth, 30);
+  assert.ok(f.ui.get().camera.zoom > 1);
   assert.equal(f.shots.length, 0);
 });
 

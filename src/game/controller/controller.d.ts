@@ -27,6 +27,7 @@ export interface GameController {
   setCameraTilt(elevation: number): void;
   setCameraZoom(zoom: number): void;
   resetCamera(): void;
+  setCameraPinned(pinned: boolean): void;
   requestHint(): Promise<void>;
   applyHint(): void;
   dispose(): void;

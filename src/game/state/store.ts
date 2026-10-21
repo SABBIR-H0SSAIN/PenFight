@@ -23,7 +23,12 @@ export function createUiStore() {
     thinking: null,
     banner: null,
     replaying: false,
-    camera: { preset: "overview", azimuth: 30, elevation: 65, zoom: 1 },
+    camera: {
+      preset: "overview",
+      ...gameConfig.camera.presets.overview,
+      zoom: gameConfig.camera.defaultZoom,
+    },
+    cameraPinned: false,
     power: null,
     surge: { visible: false, available: false, enabled: false },
     fpsLabel: "",

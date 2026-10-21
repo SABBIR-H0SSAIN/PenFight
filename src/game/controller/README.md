@@ -1,0 +1,13 @@
+# Controller and playback
+
+`createController()` owns match sequencing, gestures, camera animation, pen/character playback, pause/menu transitions and cancellation. `modes.js` builds match options independently of rendering. `camera.js` fits the desk with a fixed safe orbit, adaptive portrait framing, bounded zoom and preset transitions. `scope.js` owns listeners, timers and animation callbacks.
+
+Input projects both pens into screen-space safety capsules. Near-pen presses cannot rotate the camera; aim power starts at the actual pointer press. Pinch cancels a charged aim safely, tracks two pointers, ignores extras, and blocks remaining-finger orbit until release. Trackpad Ctrl+wheel and Safari gesture events use the same zoom action. Pause/settings/blur/resize/menu/disposal clear owned gestures. Manual changes exit Follow; users can enable Follow again.
+
+`playback.js` interpolates real sample timestamps, including nonuniform and duplicate final samples. It also defines configured impact slowdown and the cropped replay window. `controller.js` honors zero AI think delay and cancels obsolete asynchronous work with match tokens.
+
+Defaults are owned by `src/config/{camera,input,matches,playback,physics}.ts`, resolved through `config.ts`. See [Testing](../../../docs/testing.md) for controller, camera, gesture and playback suites and the native browser checklist. Never move per-frame transforms into React state.
+
+Camera pinning freezes the exact rendered pose, including a transition or Follow pose, and disables manual/automatic camera motion while preserving pen aiming. The camera panel exposes an accessible Pin view/Pinned toggle; Follow and view controls are disabled while pinned. Resize can update desk framing without rotating the pinned view. Pause/settings and subsequent rounds retain it; menu return/new matches reset it. `src/config/camera.ts` can set `defaultPinned` for new matches. `tests/camera-pin.test.js` covers gestures, follow/replay/turn changes, aiming, cleanup and default pinning.
+
+For animation verification, use `tests/helpers/controller.js` with `realCharacters: true`; default fast controller fixtures use hand stubs. The real fixture records the actual index-pad position and contact target when a physics impulse begins. `waitForTouch()` uses 0.2 cm horizontal / 0.15 cm vertical tolerances and up to 0.55 simulation seconds, plus frame quantization, for the final contact. It still has a timeout fallback for unreachable far-side positions; see [the hand audit](../../../docs/hand-motion-verification.md) before claiming physical contact for the entire board.

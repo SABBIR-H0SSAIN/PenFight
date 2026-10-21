@@ -9,6 +9,7 @@ export function GameHud() {
   const services = useGameServices(),
     state = useGameState([
       "mode",
+      "cameraPinned",
       "human",
       "title",
       "names",
@@ -90,7 +91,12 @@ export function GameHud() {
         <button
           className="tb"
           aria-label="Follow camera"
-          title="Follow the moving pen"
+          title={
+            state.cameraPinned
+              ? "Unpin the camera to use Follow"
+              : "Follow the moving pen"
+          }
+          disabled={state.cameraPinned}
           aria-pressed={settings.follow}
           onClick={() => setSettings({ follow: !settings.follow })}
         >
