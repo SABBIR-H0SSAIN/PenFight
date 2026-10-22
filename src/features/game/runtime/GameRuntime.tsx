@@ -17,6 +17,7 @@ import { GameFeedback } from "@/features/game/ui/GameFeedback";
 import { GameHud } from "@/features/game/ui/GameHud";
 import { GameMenu } from "@/features/game/ui/GameMenu";
 import { GameModals } from "@/features/game/ui/GameModals";
+import { GameLoading } from "@/features/game/ui/GameLoading";
 function GameSurface() {
   const state = useGameState([
     "replaying",
@@ -44,11 +45,7 @@ function GameSurface() {
       </div>
       <GameMenu />
       <GameModals />
-      {!state.ready && !state.error && (
-        <div className="runtime-status" role="status">
-          Preparing the classroom…
-        </div>
-      )}
+      {!state.ready && !state.error && <GameLoading />}
       {state.error && (
         <div className="runtime-error" role="alert">
           {state.error}

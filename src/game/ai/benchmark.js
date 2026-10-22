@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 /** Cancellable headless runner. It uses the same engine and knock-off rule as play. */
 export function createBenchmarkRunner(PF, ui) {
   let token = 0;
@@ -34,9 +35,9 @@ export function createBenchmarkRunner(PF, ui) {
     });
     for (let i = 0; i < N && id === token; i++) {
       const gen = PF.playRound([cfg(A), cfg(B)], {
-        seed: 4000 + i,
+        seed: gameConfig.ai.benchmark.seed + i,
         first: i % 2,
-        budgetScale: 0.4,
+        budgetScale: gameConfig.ai.benchmark.budgetScale,
         types: ["ball", "gel"],
         onDecision: (me, time) => {
           ms[me] += time;
@@ -55,10 +56,13 @@ export function createBenchmarkRunner(PF, ui) {
             ui.set({
               benchmark: {
                 ...ui.get().benchmark,
-                status: `Match ${i + 1}/${N} · ${step.value.turns} flicks. First pen off the desk loses.`,
+                status: `Match ${i + 1}/${N} · ${step.value.turns} flicks. Both score if both pens fall.`,
               },
             });
-        } while (!step.done && performance.now() - start < 14);
+        } while (
+          !step.done &&
+          performance.now() - start < gameConfig.ai.benchmark.sliceMs
+        );
         if (step.done) break;
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
@@ -67,7 +71,9 @@ export function createBenchmarkRunner(PF, ui) {
         return;
       }
       const result = step.value;
-      if (result.winner >= 0) wins[result.winner]++;
+      result.points.forEach((points, side) => {
+        wins[side] += points;
+      });
       turns += result.turns;
       if (result.how === "out") outs++;
       ui.set({

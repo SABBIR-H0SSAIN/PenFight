@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 /** Per-decision state, cooperative yields, metrics, and candidate summaries. */
 export function createSearchContext(PF) {
   const { rng, now } = PF._internals;
@@ -28,7 +29,7 @@ export function createSearchContext(PF) {
   }
   function* slice(ctx) {
     const t = now();
-    if (t - ctx.last > 7) {
+    if (t - ctx.last > gameConfig.ai.sliceMs) {
       ctx.last = t;
       ctx.live.stats = stats(ctx);
       yield ctx.live;

@@ -4,7 +4,7 @@ import type { PenKind } from "@/features/pen/types";
 export type { CharacterAppearance } from "@/features/character/types";
 export type { PenKind } from "@/features/pen/types";
 
-export type Difficulty = keyof typeof import("./ai/catalog.js").DIFFICULTIES;
+export type Difficulty = import("../config/config").ConfigDifficulty;
 
 export interface PenState {
   type: PenKind;
@@ -18,6 +18,11 @@ export interface PenState {
   vz: number;
   out: boolean;
   outT: number;
+  tipAngle: number;
+  tipNX: number;
+  tipNY: number;
+  tipPhase: number;
+  landed?: boolean;
   L: number;
   r: number;
   m: number;

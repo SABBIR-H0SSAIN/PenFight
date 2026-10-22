@@ -1,38 +1,7 @@
+import { gameConfig } from "../../config/config.ts";
 import type { GameUiState } from "./types";
-export const defaultSettings: GameUiState["settings"] = {
-  name: "Player",
-  vol: 0.7,
-  amb: true,
-  quality: "auto",
-  tableSurface: "oak",
-  follow: false,
-  replay: true,
-  slowmo: true,
-  fps: false,
-  guide: true,
-  friction: 0.98,
-  real: true,
-};
-export const defaultPreferences: GameUiState["preferences"] = {
-  vs: { pen: "ball", colors: {}, difficulty: "advanced" },
-  train: { pen: "ball", colors: {}, difficulty: "advanced", algorithm: "auto" },
-  ai: {
-    a: "astar",
-    b: "mcts",
-    sa: "advanced",
-    sb: "advanced",
-    speed: 2,
-    penA: { pen: "ball", colors: {} },
-    penB: { pen: "gel", colors: {} },
-  },
-  pvp: {
-    name1: "Player 1",
-    name2: "Player 2",
-    goal: 3,
-    pen1: { pen: "ball", colors: {} },
-    pen2: { pen: "gel", colors: {} },
-  },
-};
+export const defaultSettings = gameConfig.settings;
+export const defaultPreferences = gameConfig.preferences;
 export function createUiStore() {
   let state: GameUiState = {
     speed: 1,
@@ -41,25 +10,31 @@ export function createUiStore() {
     mode: "menu",
     view: "main",
     menuVisible: true,
+    menuTurning: false,
     paused: false,
     fromPause: false,
     end: null,
     names: ["You", "AI"],
     scores: [0, 0],
     round: 1,
-    goal: 3,
+    goal: gameConfig.matches.versusGoal,
     title: "",
     human: true,
     turn: { label: "", who: 0 },
     thinking: null,
     banner: null,
     replaying: false,
-    camera: { preset: "overview", azimuth: 30, elevation: 65, zoom: 1 },
+    camera: {
+      preset: "overview",
+      ...gameConfig.camera.presets.overview,
+      zoom: gameConfig.camera.defaultZoom,
+    },
+    cameraPinned: false,
     power: null,
     surge: { visible: false, available: false, enabled: false },
     fpsLabel: "",
     labOpen: false,
-    labAlgo: "astar",
+    labAlgo: gameConfig.ai.defaultAlgorithm as GameUiState["labAlgo"],
     live: null,
     hintBusy: false,
     hintReady: false,

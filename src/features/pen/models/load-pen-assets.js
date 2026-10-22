@@ -1,6 +1,7 @@
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MATADOR_MODEL_URL } from "./assets.js";
 
-export const MATADOR_MODEL_URL = "/models/pens/matador-hi-school.glb";
+export { MATADOR_MODEL_URL } from "./assets.js";
 /** @type {Promise<import("three").Object3D> | undefined} */
 let pending;
 /** One immutable CPU-side template; mounted pens own cloned GPU resources. */

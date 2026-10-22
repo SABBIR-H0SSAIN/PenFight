@@ -2,10 +2,31 @@ import { buildMatadorHighSchool } from "./matador-high-school.js";
 import { buildMatadorSmoothy } from "./matador-smoothy.js";
 import { buildStandardPen } from "./standard-pen.js";
 import { disposeObjectTree, release } from "../../../game/scene/dispose.js";
+
+// A small convex cross-section makes rolled cap/clip support exact without
+// walking every model vertex on every animation frame.
+function crossSectionHull(points) {
+  points.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (a, b, c) =>
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const half = (values) => {
+    const hull = [];
+    for (const point of values) {
+      while (hull.length > 1 && cross(hull.at(-2), hull.at(-1), point) <= 0)
+        hull.pop();
+      hull.push(point);
+    }
+    return hull.slice(0, -1);
+  };
+  return [...half(points), ...half([...points].reverse())];
+}
 /* Pen feature: meshes, materials, and snapshots rendered from physics state. */
 export function createPenFeature(deps, matadorTemplate) {
   const { THREE: T, PF, W, H, cvs, ctex, M } = deps;
   const shared = {};
+  const tipAxis = new T.Vector3();
+  const yawRotation = new T.Quaternion();
+  const up = new T.Vector3(0, 1, 0);
   const PEN_STYLE = {
     ball: {
       body: { c: 0x2350d8, r: 0.35, m: 0.0 },
@@ -118,6 +139,20 @@ export function createPenFeature(deps, matadorTemplate) {
       bodyM,
       template: matadorTemplate,
     });
+    // Keep the original model proportions. Its lowest cap/clip vertex sets
+    // resting height, including when rolled before tipping about an edge.
+    g.updateMatrixWorld(true);
+    const vertex = new T.Vector3();
+    const crossSection = [];
+    g.traverse((mesh) => {
+      if (!mesh.isMesh) return;
+      const vertices = mesh.geometry.attributes.position;
+      for (let i = 0; i < vertices.count; i++) {
+        vertex.fromBufferAttribute(vertices, i).applyMatrix4(mesh.matrixWorld);
+        crossSection.push([vertex.y, vertex.z]);
+      }
+    });
+    g.userData.supportHull = crossSectionHull(crossSection);
     g.traverse((o) => {
       if (o.isMesh) {
         const materials = Array.isArray(o.material) ? o.material : [o.material];
@@ -180,14 +215,24 @@ export function createPenFeature(deps, matadorTemplate) {
   /* Put pen mesh at a physics snapshot entry {x,y,a,z,out,outT} */
   function setPen(p, s, t, scale) {
     p.group.position.set(s.x - W / 2, s.z || 0, s.y - H / 2);
-    p.holder.rotation.y = -s.a;
-    if (p.model) p.model.rotation.x = s.roll || 0;
-    p.group.scale.setScalar(scale == null ? 1 : scale);
-    let tilt = 0;
-    if (s.out) {
-      tilt = Math.min(1.1, Math.max(0, (t - s.outT) * 2.4));
+    yawRotation.setFromAxisAngle(up, -s.a);
+    if (s.out && s.tipAngle) {
+      tipAxis.set(s.tipNY, 0, -s.tipNX);
+      p.holder.quaternion
+        .setFromAxisAngle(tipAxis, s.tipAngle)
+        .multiply(yawRotation);
+    } else p.holder.quaternion.copy(yawRotation);
+    if (p.model) {
+      const roll = s.roll || 0,
+        ca = Math.cos(roll),
+        sa = Math.sin(roll);
+      p.model.rotation.x = roll;
+      let height = -Infinity;
+      for (const [y, z] of p.model.userData.supportHull)
+        height = Math.max(height, -y * ca + z * sa);
+      p.model.position.y = height;
     }
-    p.holder.rotation.z = tilt;
+    p.group.scale.setScalar(scale == null ? 1 : scale);
     p.shadow.visible = !s.out || (s.z || 0) > -2;
     p.shadow.rotation.z = s.a;
     p.shadow.material.opacity = 0.35;

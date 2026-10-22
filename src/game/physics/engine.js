@@ -1,3 +1,4 @@
+import { gameConfig, CONFIG_LIMITS } from "../../config/config.ts";
 import {
   PEN_DEFINITIONS,
   CUSTOM_PEN_COLORS,
@@ -5,26 +6,29 @@ import {
 
 export function createPhysics() {
   const PF = {};
-  PF.REAL = true;
+  PF.REAL = gameConfig.settings.real;
   PF.setRealism = (v) => {
     PF.REAL = !!v;
   };
   // Shared by gameplay, AI simulations and benchmarks. Calibrated default is
   // 98% of the former friction: slightly more slide, without the one-shot
   // knock-off regression that occurred with experimental independent rolling.
-  PF.FRICTION = 0.98;
+  PF.FRICTION = gameConfig.settings.friction;
   PF.setFriction = function (value) {
     const num = Number(value);
     PF.FRICTION = Number.isFinite(num)
-      ? Math.max(0.8, Math.min(1.1, num))
-      : 0.98;
+      ? Math.max(
+          CONFIG_LIMITS.friction.min,
+          Math.min(CONFIG_LIMITS.friction.max, num),
+        )
+      : gameConfig.settings.friction;
   };
   const W = 60,
     H = 100,
-    G = 981,
-    VMAX = 210,
-    SPIN = 0.12,
-    DT = 1 / 200;
+    G = gameConfig.physics.gravity,
+    VMAX = gameConfig.physics.maxFlickSpeed,
+    SPIN = gameConfig.physics.spinMultiplier,
+    DT = gameConfig.physics.timeStep;
   PF.TABLE = { w: W, h: H };
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const now = () =>
@@ -67,6 +71,10 @@ export function createPhysics() {
       vz: 0,
       out: false,
       outT: 0,
+      tipAngle: 0,
+      tipNX: 0,
+      tipNY: 0,
+      tipPhase: 0,
       L: T.len,
       r: T.r,
       m: T.mass,
@@ -338,35 +346,147 @@ export function createPhysics() {
       p.w = 0;
     }
   }
-  // Track first centre-of-mass boundary crossing in a fixed integration step.
-  // A draw is possible only when both leave at indistinguishable times.
-  function firstEdgeCross(x0, y0, x1, y1) {
-    let f = 1;
-    if (x1 < 0 && x1 !== x0) f = Math.min(f, -x0 / (x1 - x0));
-    if (x1 > W && x1 !== x0) f = Math.min(f, (W - x0) / (x1 - x0));
-    if (y1 < 0 && y1 !== y0) f = Math.min(f, -y0 / (y1 - y0));
-    if (y1 > H && y1 !== y0) f = Math.min(f, (H - y0) / (y1 - y0));
-    return clamp(f, 0, 1);
+  // Geometric overlap is different from balance: a tiny supported end cannot
+  // hold a uniform barrel whose centre of mass is outside the tabletop.
+  const deskEdges = [
+    [0, 0, W, 0],
+    [W, 0, W, H],
+    [W, H, 0, H],
+    [0, H, 0, 0],
+  ];
+  function overlapsTable(p) {
+    if (p.x >= 0 && p.x <= W && p.y >= 0 && p.y <= H) return true;
+    const dx = (Math.cos(p.a) * p.L) / 2,
+      dy = (Math.sin(p.a) * p.L) / 2,
+      x0 = p.x - dx,
+      y0 = p.y - dy,
+      x1 = p.x + dx,
+      y1 = p.y + dy;
+    if (
+      Math.max(x0, x1) + p.r < 0 ||
+      Math.min(x0, x1) - p.r > W ||
+      Math.max(y0, y1) + p.r < 0 ||
+      Math.min(y0, y1) - p.r > H
+    )
+      return false;
+    for (const edge of deskEdges) {
+      segClosest(x0, y0, x1, y1, ...edge, _c);
+      if (Math.hypot(_c[0] - _c[2], _c[1] - _c[3]) <= p.r) return true;
+    }
+    return false;
+  }
+  PF.overlapsTable = overlapsTable;
+  function hasTableSupport(p) {
+    return p.x >= 0 && p.x <= W && p.y >= 0 && p.y <= H;
+  }
+  PF.hasTableSupport = hasTableSupport;
+
+  function beginFall(p) {
+    const px = clamp(p.x, 0, W),
+      py = clamp(p.y, 0, H),
+      distance = Math.hypot(p.x - px, p.y - py);
+    p.tipNX = (p.x - px) / distance;
+    p.tipNY = (p.y - py) / distance;
+    p.tipAngle = 0;
+    p.tipPhase = overlapsTable(p) ? 1 : 0;
+    if (p.tipPhase === 1) {
+      p.tipPivotX = px;
+      p.tipPivotY = py;
+      p.tipDistance = distance;
+      p.tipSpeed = 0;
+      const normalSpeed = p.vx * p.tipNX + p.vy * p.tipNY;
+      p.tipSlide = Math.max(0, normalSpeed);
+      p.tipTangentX = p.vx - normalSpeed * p.tipNX;
+      p.tipTangentY = p.vy - normalSpeed * p.tipNY;
+      p.w = 0;
+    }
+  }
+
+  function stepFall(p, dt, c, who) {
+    if (p.tipPhase === 1) {
+      // Rotate about the nearest desk edge/corner. The supported end rises
+      // while the overhanging end lowers, instead of translating through wood.
+      p.tipDistance += p.tipSlide * dt;
+      p.tipPivotX += p.tipTangentX * dt;
+      p.tipPivotY += p.tipTangentY * dt;
+      const projection = Math.cos(p.a) * p.tipNX + Math.sin(p.a) * p.tipNY,
+        inertia =
+          (p.I / p.m) * projection * projection +
+          1.5 * p.r * p.r +
+          p.tipDistance * p.tipDistance;
+      p.tipSpeed +=
+        ((G *
+          (p.tipDistance * Math.cos(p.tipAngle) + p.r * Math.sin(p.tipAngle))) /
+          inertia) *
+        dt;
+      p.tipAngle = Math.min(Math.PI / 2, p.tipAngle + p.tipSpeed * dt);
+      const horizontal = p.tipDistance * Math.cos(p.tipAngle);
+      p.x = p.tipPivotX + p.tipNX * horizontal;
+      p.y = p.tipPivotY + p.tipNY * horizontal;
+      p.z = -p.tipDistance * Math.sin(p.tipAngle);
+      p.vz =
+        -p.tipSlide * Math.sin(p.tipAngle) -
+        p.tipDistance * Math.cos(p.tipAngle) * p.tipSpeed;
+      if (p.tipAngle === Math.PI / 2) {
+        p.tipPhase = 2;
+        p.vx = p.tipNX * p.tipSlide + p.tipTangentX;
+        p.vy = p.tipNY * p.tipSlide + p.tipTangentY;
+        p.vz = Math.min(p.vz, -p.r * p.tipSpeed);
+        c.recordBoundary = true;
+      }
+    } else {
+      const x = p.x,
+        y = p.y,
+        a = p.a,
+        deskClearance = -4 - p.L / 2 - 2 * p.r,
+        besideDesk = p.z > deskClearance;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.a += p.w * dt;
+      if (p.tipPhase === 0 && besideDesk && overlapsTable(p)) {
+        p.x = x;
+        p.y = y;
+        p.a = a;
+      }
+      p.vz -= G * dt;
+      p.z += p.vz * dt;
+      if (besideDesk && p.z <= deskClearance) c.recordBoundary = true;
+      // A fully departed barrel can tumble once below the side of the desk.
+      if (p.tipPhase === 0 && !besideDesk)
+        p.tipAngle = Math.min(1.1, p.tipAngle + 2.4 * dt);
+    }
+    const verticalAxis = Math.abs(
+        (Math.cos(p.a) * p.tipNX + Math.sin(p.a) * p.tipNY) *
+          Math.sin(p.tipAngle),
+      ),
+      floorZ =
+        -75 -
+        p.r * Math.cos(p.tipAngle) +
+        (p.L / 2) * verticalAxis +
+        p.r * Math.sqrt(Math.max(0, 1 - verticalAxis ** 2));
+    if (p.z <= floorZ) {
+      if (!p.landed) {
+        p.landed = true;
+        c.recordBoundary = true;
+        c.events.push({
+          type: "landing",
+          t: c.t + dt,
+          who,
+          x: p.x,
+          y: p.y,
+        });
+      }
+      p.z = floorZ;
+      p.vz = 0;
+      p.vx = p.vy = p.w = 0;
+    }
   }
   function stepWorld(P, dt, c) {
-    const previous = [
-      [P[0].x, P[0].y],
-      [P[1].x, P[1].y],
-    ];
     for (let i = 0; i < 2; i++) {
       const p = P[i];
       if (p.out) {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.a += p.w * dt;
-        p.vz -= G * dt;
-        p.z += p.vz * dt;
-        if (p.z < -75) {
-          p.z = -75;
-          p.vz = 0;
-          p.vx *= 0.92;
-          p.vy *= 0.92;
-          p.w *= 0.92;
+        if (!p.landed) {
+          stepFall(p, dt, c, i);
         }
         continue;
       }
@@ -401,16 +521,14 @@ export function createPhysics() {
     if (!P[0].out && !P[1].out) collide(P[0], P[1], c);
     for (let i = 0; i < 2; i++) {
       const p = P[i];
-      if (p.out || (p.x >= 0 && p.x <= W && p.y >= 0 && p.y <= H)) continue;
-      const t =
-        c.t + firstEdgeCross(previous[i][0], previous[i][1], p.x, p.y) * dt;
+      if (p.out || hasTableSupport(p)) continue;
+      const t = c.t + dt;
       p.out = true;
       p.outT = t;
       p.vz = 0;
-      if (c.out < 0 || t < c.outT - 1e-6) {
-        c.out = i;
-        c.outT = t;
-      } else if (Math.abs(t - c.outT) <= 1e-6) c.out = 2;
+      beginFall(p);
+      c.out = P[0].out && P[1].out ? 2 : i;
+      c.outT = t;
       if (c.events.length < 24)
         c.events.push({ type: "out", t, who: i, x: p.x, y: p.y });
     }
@@ -423,7 +541,9 @@ export function createPhysics() {
       ang += gauss(r) * noise.a;
       pow = clamp(pow * (1 + gauss(r) * noise.p), 0.05, 1.1);
     }
-    const v = ((VMAX * pow * p.spd) / Math.sqrt(p.m)) * (act.surge ? 1.6 : 1);
+    const v =
+      ((VMAX * pow * p.spd) / Math.sqrt(p.m)) *
+      (act.surge ? gameConfig.physics.surgeMultiplier : 1);
     const dx = Math.cos(ang),
       dy = Math.sin(ang);
     p.vx += dx * v;
@@ -448,28 +568,36 @@ export function createPhysics() {
       events: [],
     };
     const fl = PF.flick(P[who], act, o.noise, o.rng);
-    const maxT = o.maxT || 4.5,
+    const maxT = o.maxT || gameConfig.physics.simulationSeconds,
       after = o.afterOut || 0;
     const rec = o.record ? [] : null;
     let recAcc = 0;
     if (rec) rec.push(snap(P, 0));
     let k = 0;
     while (c.t < maxT) {
+      const beforeOut = c.out;
+      c.recordBoundary = false;
       stepWorld(P, DT, c);
       c.t += DT;
       k++;
       if (rec) {
         recAcc += DT;
+        if (beforeOut !== c.out || c.recordBoundary) rec.push(snap(P, c.t));
         if (recAcc >= o.record) {
           recAcc -= o.record;
           rec.push(snap(P, c.t));
         }
       }
-      if (c.out >= 0 && c.t - c.outT >= after) break;
-      if (k % 10 === 0 && c.out < 0) {
+      // Resolve every pen still sliding on the desk, even after the first fall.
+      // afterOut only controls the fall animation; it cannot decide the score.
+      if (k % 10 === 0 && (c.out < 0 || c.t - c.outT >= after)) {
         let moving = false;
         for (let i = 0; i < 2; i++) {
           const p = P[i];
+          if (p.out) {
+            if (rec && !p.landed) moving = true;
+            continue;
+          }
           if (p.vx * p.vx + p.vy * p.vy > 0.04 || Math.abs(p.w) > 0.02) {
             moving = true;
             break;
@@ -502,6 +630,14 @@ export function createPhysics() {
         z: p.z,
         out: p.out,
         outT: p.outT,
+        tipAngle: p.tipAngle,
+        tipNX: p.tipNX,
+        tipNY: p.tipNY,
+        tipPhase: p.tipPhase,
+        tipPivotX: p.tipPivotX,
+        tipPivotY: p.tipPivotY,
+        tipDistance: p.tipDistance,
+        landed: !!p.landed,
         w: p.w,
         vx: p.vx,
         vy: p.vy,

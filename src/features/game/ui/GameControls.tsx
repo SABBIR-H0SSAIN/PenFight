@@ -1,4 +1,5 @@
 "use client";
+import { gameConfig, CONFIG_LIMITS } from "@/config/config";
 import { memo, useEffect, useRef } from "react";
 import {
   useGameServices,
@@ -9,6 +10,7 @@ const CameraControls = memo(function CameraControls() {
   const state = useGameState([
     "mode",
     "camera",
+    "cameraPinned",
     "power",
     "paused",
     "menuVisible",
@@ -39,6 +41,7 @@ const CameraControls = memo(function CameraControls() {
   return (
     <details
       className="camera-controls"
+      data-pinned={state.cameraPinned}
       ref={panel}
       onKeyDown={(event) => {
         if (event.key === "Escape" && panel.current?.open) {
@@ -50,8 +53,14 @@ const CameraControls = memo(function CameraControls() {
       }}
     >
       <summary
-        aria-label="Camera controls"
-        title="Camera controls"
+        aria-label={
+          state.cameraPinned
+            ? "Camera controls, view pinned"
+            : "Camera controls"
+        }
+        title={
+          state.cameraPinned ? "Camera controls · Pinned" : "Camera controls"
+        }
         aria-controls="camera-options"
       >
         <svg
@@ -71,13 +80,41 @@ const CameraControls = memo(function CameraControls() {
         <legend className="sr-only">Camera controls</legend>
         <div className="camera-panel-heading">
           <span>Camera</span>
-          <button
-            type="button"
-            aria-label="Reset camera view and zoom"
-            onClick={() => services.controller?.resetCamera()}
-          >
-            Reset
-          </button>
+          <div className="camera-panel-actions">
+            <button
+              type="button"
+              aria-label={
+                state.cameraPinned
+                  ? "Unpin camera position"
+                  : "Pin camera position"
+              }
+              aria-pressed={state.cameraPinned}
+              onClick={() =>
+                services.controller?.setCameraPinned(!state.cameraPinned)
+              }
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="m15 3 6 6-3 1-3 5-3 1-4-4 1-3 5-3 1-3Z M10 14l-7 7" />
+              </svg>
+              {state.cameraPinned ? "Pinned" : "Pin view"}
+            </button>
+            <button
+              type="button"
+              aria-label="Reset camera view and zoom"
+              disabled={state.cameraPinned}
+              onClick={() => services.controller?.resetCamera()}
+            >
+              Reset
+            </button>
+          </div>
         </div>
         <div className="camera-presets" role="group" aria-label="Camera views">
           {(
@@ -93,6 +130,7 @@ const CameraControls = memo(function CameraControls() {
               key={preset}
               title={title}
               aria-pressed={state.camera.preset === preset}
+              disabled={state.cameraPinned}
               onClick={() => services.controller?.setCameraPreset(preset)}
             >
               {label}
@@ -105,6 +143,7 @@ const CameraControls = memo(function CameraControls() {
           </span>
           <input
             aria-label="Camera rotation"
+            disabled={state.cameraPinned}
             type="range"
             min="-180"
             max="180"
@@ -121,9 +160,10 @@ const CameraControls = memo(function CameraControls() {
           </span>
           <input
             aria-label="Camera tilt"
+            disabled={state.cameraPinned}
             type="range"
-            min="45"
-            max="89"
+            min={CONFIG_LIMITS.elevation.min}
+            max={CONFIG_LIMITS.elevation.max}
             step="1"
             value={state.camera.elevation}
             onChange={(event) =>
@@ -137,10 +177,11 @@ const CameraControls = memo(function CameraControls() {
           </span>
           <input
             aria-label="Camera zoom"
+            disabled={state.cameraPinned}
             aria-valuetext={`${Math.round(state.camera.zoom * 100)} percent`}
             type="range"
-            min="50"
-            max="200"
+            min={CONFIG_LIMITS.zoom.min * 100}
+            max={CONFIG_LIMITS.zoom.max * 100}
             step="5"
             value={Math.round(state.camera.zoom * 100)}
             onChange={(event) =>
@@ -168,7 +209,10 @@ export function GameControls() {
               <span>Flick power</span>
               <span>
                 {Math.round(
-                  state.power.value * (state.power.surge ? 160 : 100),
+                  state.power.value *
+                    (state.power.surge
+                      ? gameConfig.physics.surgeMultiplier * 100
+                      : 100),
                 )}
                 {state.power.surge ? " SURGE" : ""}
               </span>
@@ -189,7 +233,7 @@ export function GameControls() {
         {state.surge.visible && (
           <button
             className="tb"
-            title="Surge ×1.6 · once per round"
+            title={`Surge ×${gameConfig.physics.surgeMultiplier} · once per round`}
             aria-pressed={state.surge.enabled}
             disabled={!state.surge.available}
             onClick={() => services.controller?.toggleSurge()}
@@ -197,7 +241,7 @@ export function GameControls() {
             <span className="tb-icon" aria-hidden="true">
               ✦
             </span>
-            <span>Surge ×1.6</span>
+            <span>Surge ×{gameConfig.physics.surgeMultiplier}</span>
           </button>
         )}
         <div id="turn" data-who={state.turn.who}>

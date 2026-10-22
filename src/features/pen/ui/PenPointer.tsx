@@ -1,9 +1,16 @@
-export function PenPointer({ top }: { top: number }) {
+import { useId } from "react";
+
+export function PenPointer() {
+  const gradientId = useId();
   return (
-    <div className="pen-pointer" aria-hidden="true" style={{ top }}>
-      <svg viewBox={"0 0 155 34"} xmlns={"http://www.w3.org/2000/svg"}>
+    <span className="pen-pointer" aria-hidden="true">
+      <svg
+        viewBox={"0 0 155 34"}
+        xmlns={"http://www.w3.org/2000/svg"}
+        focusable="false"
+      >
         <defs>
-          <linearGradient id={"ppbody"} x1={"0"} x2={"0"} y1={"0"} y2={"1"}>
+          <linearGradient id={gradientId} x1={"0"} x2={"0"} y1={"0"} y2={"1"}>
             <stop stopColor={"#5295cd"}></stop>
             <stop offset={".48"} stopColor={"#e2f4ff"}></stop>
             <stop offset={"1"} stopColor={"#3b77a6"}></stop>
@@ -23,7 +30,7 @@ export function PenPointer({ top }: { top: number }) {
           width={"119"}
           height={"18"}
           rx={"6"}
-          fill={"url(#ppbody)"}
+          fill={`url(#${gradientId})`}
           stroke={"#4b6f9a"}
           strokeWidth={"1"}
         ></rect>
@@ -55,6 +62,6 @@ export function PenPointer({ top }: { top: number }) {
           MATADOR
         </text>
       </svg>
-    </div>
+    </span>
   );
 }

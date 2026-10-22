@@ -24,12 +24,13 @@ export function createTableFeature(deps) {
       );
     };
     topMaterial.customProgramCacheKey = () => "original-bench-matte";
-    // The original canvas is authored to this exact tabletop aspect ratio.
+    // Canvas rows run down; from above, texture V must run toward -Z.
+    // Matching PlaneGeometry orientation keeps the carved letters readable.
     const geometry = furniture.panel(W, H, 4, 1.8).clone();
     const positions = geometry.attributes.position,
       uv = geometry.attributes.uv;
     for (let i = 0; i < positions.count; i++)
-      uv.setXY(i, positions.getX(i) / W + 0.5, positions.getZ(i) / H + 0.5);
+      uv.setXY(i, positions.getX(i) / W + 0.5, 0.5 - positions.getZ(i) / H);
     const side = deps.M(
       { oak: 0x8e5f2f, maple: 0xa38a5e, walnut: 0x513722 }[surface] || 0x8e5f2f,
       1,

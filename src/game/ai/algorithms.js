@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 import { createUninformedStrategy } from "./strategies/uninformed.js";
 import { createShotEvaluator } from "./evaluation.js";
 import { createSearchContext } from "./context.js";
@@ -22,25 +23,20 @@ export function installAlgorithms(PF) {
   const { fuzzyAI } = createFuzzyStrategy(deps);
   const { minimaxAI } = createMinimaxStrategy(deps);
   const { mctsAI } = createMctsStrategy(deps);
-  const { depthSearch, bidirectional } = createUninformedStrategy(deps);
+  const { depthSearch } = createUninformedStrategy(deps);
 
   PF.ALGOS = ALGORITHMS;
   PF.SHORT = ALGORITHM_SHORT;
   PF.LEVELS = DIFFICULTIES;
-  const DEFAULT_CFG = {
-    dfs: { leafBudget: 90 },
-    dls: { leafBudget: 90, depthLimit: 4 },
-    iddfs: { leafBudget: 90, depthLimit: 4 },
-    bidirectional: { leafBudget: 90 },
-    best: { evalBudget: 110 },
-    astar: { evalBudget: 130 },
-    minimax: { depth: 2, beam: 8 },
-    mcts: { iters: 3000 },
-    fuzzy: {},
-  };
+  const DEFAULT_CFG = gameConfig.ai.budgets;
   PF.decide = function* (state, me, cfg) {
-    cfg = Object.assign({ algo: "astar", noise: null }, cfg);
-    const algo = Object.hasOwn(ALGORITHMS, cfg.algo) ? cfg.algo : "astar";
+    cfg = Object.assign(
+      { algo: gameConfig.ai.defaultAlgorithm, noise: null },
+      cfg,
+    );
+    const algo = Object.hasOwn(ALGORITHMS, cfg.algo)
+      ? cfg.algo
+      : gameConfig.ai.defaultAlgorithm;
     cfg.algo = algo;
     const ctx = mkCtx(cfg, me);
     ctx.live.algo = algo;
@@ -54,8 +50,6 @@ export function installAlgorithms(PF) {
     let out;
     if (["dfs", "dls", "iddfs"].includes(algo))
       out = yield* depthSearch(state, me, c, ctx, algo);
-    else if (algo === "bidirectional")
-      out = yield* bidirectional(state, me, c, ctx);
     else if (algo === "best") out = yield* informed(state, me, c, ctx, false);
     else if (algo === "astar") out = yield* informed(state, me, c, ctx, true);
     else if (algo === "fuzzy") out = yield* fuzzyAI(state, me, c, ctx);

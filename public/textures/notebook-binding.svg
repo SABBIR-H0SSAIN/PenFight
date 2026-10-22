@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="54" height="56" viewBox="0 0 54 56">
+  <defs>
+    <linearGradient id="wire" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f5f6f3"/>
+      <stop offset=".4" stop-color="#b7bdbc"/>
+      <stop offset="1" stop-color="#505b62"/>
+    </linearGradient>
+    <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#49463d"/>
+      <stop offset="1" stop-color="#8c816c"/>
+    </linearGradient>
+  </defs>
+  <!-- Only the wire above the page is visible. Its return passes underneath
+       the paper, rather than forming a closed metal oval on the surface. -->
+  <ellipse cx="43" cy="28.5" rx="3.4" ry="4.1" fill="#b4a58b" opacity=".32"/>
+  <ellipse cx="43" cy="28" rx="2.6" ry="3.2" fill="url(#hole)"/>
+  <path d="M3 29 C0 17 32 15 41 24 C43 26 43 27 43 28" fill="none" stroke="#655c4d" stroke-opacity=".22" stroke-width="4.2" transform="translate(0 1.4)"/>
+  <path d="M3 29 C0 17 32 15 41 24 C43 26 43 27 43 28" fill="none" stroke="#505b62" stroke-width="3.8"/>
+  <path d="M3 29 C0 17 32 15 41 24 C43 26 43 27 43 28" fill="none" stroke="url(#wire)" stroke-width="2.8"/>
+  <path d="M10 21 C19 18 33 20 39 23" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".8"/>
+  <!-- The front paper lip occludes the wire tip at the hole's contact point. -->
+  <path d="M40.5 29.5 Q43 32 45.5 29.5" fill="none" stroke="#fff9e9" stroke-width="1.3"/>
+</svg>

@@ -12,6 +12,26 @@ import {
 } from "../src/game/controller/camera.js";
 import { controllerFixture } from "./helpers/controller.js";
 
+test("configured Player-view rotation survives a turn change", async (t) => {
+  const original = CAMERA_PRESETS.player.azimuth;
+  CAMERA_PRESETS.player.azimuth = 20;
+  t.after(() => {
+    CAMERA_PRESETS.player.azimuth = original;
+  });
+  const f = controllerFixture(t);
+  f.controller.start("pvp");
+  await f.advance(100);
+  f.controller.setCameraPreset("player");
+  await f.advance(100);
+  assert.equal(f.ui.get().camera.azimuth, 20);
+  const point = f.point(f.ui.get().turn.who);
+  f.pointer("pointerdown", point);
+  f.pointer("pointerup", { x: point.x + 20, y: point.y + 10 });
+  await f.advance(200);
+  assert.equal(f.ui.get().turn.who, 1);
+  assert.equal(f.ui.get().camera.azimuth, -160);
+});
+
 test("relative slider keypresses publish immediately instead of losing steps before the next frame", async (t) => {
   const f = controllerFixture(t);
   f.controller.start("pvp");
@@ -428,7 +448,7 @@ test("a drag can return to its origin without sticking at the dead zone", async 
   assert.equal(f.ui.get().camera.elevation, initial.elevation);
 });
 
-test("a second touch cannot hijack a camera drag or release its capture", async (t) => {
+test("a second touch zooms without rotating or turning its remaining finger into an orbit drag", async (t) => {
   const f = controllerFixture(t);
   f.controller.start("pvp");
   await f.advance(100);
@@ -452,7 +472,8 @@ test("a second touch cannot hijack a camera drag or release its capture", async 
   f.pointer("pointermove", { x: 105, y: 350 }, { pointerType: "touch" });
   f.pointer("pointerup", { x: 105, y: 350 }, { pointerType: "touch" });
   assert.equal(f.captured.size, 0);
-  assert.equal(f.ui.get().camera.azimuth, -5);
+  assert.equal(f.ui.get().camera.azimuth, 30);
+  assert.ok(f.ui.get().camera.zoom > 1);
   assert.equal(f.shots.length, 0);
 });
 

@@ -3,8 +3,55 @@ import assert from "node:assert/strict";
 import {
   impactPlaybackRate,
   replayWindow,
+  interpolateRecording,
 } from "../src/game/controller/playback.js";
 import { reachProgress, handAngle } from "../src/features/character/motion.js";
+import { createGameEngine } from "../src/game/engine.js";
+
+test("recorded playback interpolates actual timestamps, clamps ends and handles duplicate final samples", () => {
+  const frame = (t, x, out = false) => ({
+    t,
+    p: [{ x, y: x, a: x, z: x, vx: 1, vy: 2, roll: x, out, outT: 0.035 }],
+  });
+  const rec = [
+    frame(0, 0),
+    frame(0.02, 2),
+    frame(0.035, 3.5),
+    frame(0.035, 3.5, true),
+  ];
+  for (const time of [0, 0.01, 0.02, 0.03, 0.034]) {
+    const result = interpolateRecording(rec, time);
+    assert.ok(Math.abs(result.p[0].x - time * 100) < 1e-10);
+    assert.equal(result.p[0].out, false);
+  }
+  assert.equal(interpolateRecording(rec, -1).p[0].x, 0);
+  assert.equal(interpolateRecording(rec, 10).p[0].x, 3.5);
+  assert.equal(interpolateRecording(rec, 0.035).p[0].out, true);
+  assert.deepEqual(interpolateRecording([rec[0]], 10), rec[0]);
+  assert.equal(interpolateRecording([], 0), null);
+  assert.equal(interpolateRecording(rec, NaN).p[0].x, 0);
+});
+
+test("playback lands on every real physics sample at 30, 60 and 120 Hz recordings", () => {
+  const engine = createGameEngine(),
+    state = engine.newState(["ball", "gel"], engine.rng(42), 0);
+  for (const interval of [1 / 30, 1 / 60, 1 / 120]) {
+    const shot = engine.shoot(
+      state.pens,
+      0,
+      { ang: -Math.PI / 2, pow: 0.8, off: 0 },
+      { record: interval, afterOut: 0.45 },
+    );
+    for (const sample of shot.rec) {
+      const frame = interpolateRecording(shot.rec, sample.t);
+      for (let i = 0; i < 2; i++)
+        for (const key of ["x", "y", "z", "a", "roll"]) {
+          assert.ok(Number.isFinite(frame.p[i][key]));
+          assert.ok(Math.abs(frame.p[i][key] - sample.p[i][key]) < 1e-8);
+        }
+    }
+  }
+});
 
 test("impact accents never crawl and normal speed returns after 155 ms of simulation", () => {
   assert.equal(impactPlaybackRate(1, 1), 0.75);

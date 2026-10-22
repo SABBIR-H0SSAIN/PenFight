@@ -14,8 +14,8 @@ export function createShotEvaluator(PF) {
         rng: o.rng,
         maxT: 3.6,
       });
-      if (r.out === 1 - me) sS++;
-      if (r.out === me) sF++;
+      if (r.out === 1 - me || r.out === 2) sS++;
+      if (r.out === me || r.out === 2) sF++;
       if (r.hit) sH++;
       sE += PF.E(r.pens, me, o);
       sG += Math.min(1, Math.max(0, r.minGap) / 60);

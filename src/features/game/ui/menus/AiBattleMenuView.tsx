@@ -1,4 +1,5 @@
 "use client";
+import { CONFIG_LIMITS } from "@/config/config";
 import {
   useGamePreferences,
   useGameServices,
@@ -79,7 +80,7 @@ export function AiBattleMenuView() {
           value={value.speed}
           onChange={(event) => update({ speed: Number(event.target.value) })}
         >
-          {[1, 2, 4].map((speed) => (
+          {CONFIG_LIMITS.speeds.map((speed) => (
             <option key={speed} value={speed}>
               x{speed}
             </option>

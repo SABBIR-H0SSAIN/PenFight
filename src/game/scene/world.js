@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 /* Three.js scene coordinator. Feature geometry and character behavior live in src/features. */
 import * as THREE from "three";
 import { disposeObjectTree } from "./dispose.js";
@@ -23,7 +24,7 @@ export function createWorld(PF) {
   function ctex(c, rep, srgb) {
     const t = new T.CanvasTexture(c);
     if (srgb !== false) t.encoding = T.sRGBEncoding;
-    t.anisotropy = 8;
+    t.anisotropy = Math.min(gameConfig.graphics.maxAnisotropy, 8);
     if (rep) {
       t.wrapS = t.wrapT = T.RepeatWrapping;
       t.repeat.set(rep[0], rep[1]);
@@ -79,7 +80,7 @@ export function createWorld(PF) {
     });
     r.outputEncoding = T.sRGBEncoding;
     r.toneMapping = T.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.0;
+    r.toneMappingExposure = gameConfig.graphics.exposure;
     r.shadowMap.enabled = true;
     r.shadowMap.type = T.PCFSoftShadowMap;
     R.renderer = r;
@@ -103,11 +104,11 @@ export function createWorld(PF) {
   R.setQuality = function (q) {
     R.quality = q;
     const r = R.renderer,
-      ms = q === "low" ? 512 : q === "medium" ? 1024 : 2048;
+      ms = gameConfig.graphics.quality[q].shadowMap;
     r.setPixelRatio(
       Math.min(
         window.devicePixelRatio || 1,
-        q === "low" ? 1 : q === "medium" ? 1.5 : 2,
+        gameConfig.graphics.quality[q].pixelRatio,
       ),
     );
     if (R.sun) {
@@ -124,9 +125,16 @@ export function createWorld(PF) {
 
   function lights() {
     const sc = R.scene,
-      hemi = new T.HemisphereLight(0xdfeaff, 0x776b5e, 0.48);
+      hemi = new T.HemisphereLight(
+        0xdfeaff,
+        0x776b5e,
+        gameConfig.graphics.lighting.hemisphere,
+      );
     sc.add(hemi);
-    const sun = new T.DirectionalLight(0xfff3e1, 1.3);
+    const sun = new T.DirectionalLight(
+      0xfff3e1,
+      gameConfig.graphics.lighting.sun,
+    );
     sun.position.set(-260, 170, 40);
     sun.target.position.set(0, -20, 0);
     sun.shadow.camera.left = -150;
@@ -141,10 +149,20 @@ export function createWorld(PF) {
     sun.shadow.radius = 2;
     sc.add(sun, sun.target);
     R.sun = sun;
-    const fill = new T.DirectionalLight(0xdde9ff, 0.32);
+    const fill = new T.DirectionalLight(
+      0xdde9ff,
+      gameConfig.graphics.lighting.fill,
+    );
     fill.position.set(140, 100, -100);
     sc.add(fill);
-    const spot = new T.SpotLight(0xfff6e6, 0.45, 500, 0.9, 0.7, 1);
+    const spot = new T.SpotLight(
+      0xfff6e6,
+      gameConfig.graphics.lighting.spot,
+      500,
+      0.9,
+      0.7,
+      1,
+    );
     spot.position.set(0, 190, 10);
     spot.target.position.set(0, 0, 0);
     sc.add(spot, spot.target);
@@ -153,7 +171,12 @@ export function createWorld(PF) {
       [110, 215, -60],
       [0, 215, 120],
     ].forEach((p) => {
-      const l = new T.PointLight(0xf2f6ff, 0.22, 380, 2);
+      const l = new T.PointLight(
+        0xf2f6ff,
+        gameConfig.graphics.lighting.point,
+        380,
+        2,
+      );
       l.position.set(...p);
       sc.add(l);
     });
@@ -554,6 +577,7 @@ export function createWorld(PF) {
   R.setPen = (i, state, time, scale) => R.pens[i].setState(state, time, scale);
   R.dispose = function () {
     R.initialized = false;
+    R.benchTextureCanvases?.clear();
     if (R.scene) {
       disposeObjectTree(R.scene);
       R.scene.clear();

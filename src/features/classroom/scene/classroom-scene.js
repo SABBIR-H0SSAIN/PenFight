@@ -1,3 +1,4 @@
+import { gameConfig } from "../../../config/config.ts";
 import { createFurnitureLibrary } from "../../furniture/scene/furniture.js";
 
 /** Classroom architecture, background furniture, and lighting textures. */
@@ -99,10 +100,23 @@ export function createClassroomFeature(deps) {
     const sc = sceneRoot,
       wallMat = M(0xffffff, 0.95, 0, { map: ctex(wallTexture(), [3, 1]) });
     const floorTex = ctex(tileTexture(), [7, 6]);
-    const floor = new T.Mesh(
-      new T.PlaneGeometry(600, 440),
-      M(0xffffff, 0.38, 0.02, { map: floorTex, envMapIntensity: 0.5 }),
+    floorTex.anisotropy = Math.min(
+      gameConfig.graphics.maxAnisotropy,
+      Math.max(1, R.renderer?.capabilities?.getMaxAnisotropy?.() || 1),
     );
+    const floorMaterial = M(0xffffff, 1, 0, {
+      map: floorTex,
+      envMapIntensity: 0,
+    });
+    floorMaterial.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <lights_physical_fragment>",
+        "#include <lights_physical_fragment>\nmaterial.specularColor = vec3(0.0);",
+      );
+    };
+    floorMaterial.customProgramCacheKey = () => "classroom-matte-floor";
+    const floor = new T.Mesh(new T.PlaneGeometry(600, 440), floorMaterial);
+    floor.name = "classroom-floor";
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = FLOOR;
     floor.position.z = 40;
@@ -140,13 +154,14 @@ export function createClassroomFeature(deps) {
       b.position.set(a[0], FLOOR + 4, a[1]);
       sc.add(b);
     });
-    // windows (left wall) with frames, glass glow, curtains and sun patches
+    // Windows remain visible without projected light patterns or reflective overlays.
     const glass = new T.MeshBasicMaterial({ color: 0xdff0ff }),
       frameM = M(0xf0efe8, 0.6);
     R.sunPatches = [];
     for (let i = 0; i < 3; i++) {
       const z = -150 + i * 150,
         grp = new T.Group();
+      grp.name = "classroom-window";
       grp.position.set(-299, 70, z);
       const gl = new T.Mesh(new T.PlaneGeometry(100, 120), glass);
       gl.rotation.y = Math.PI / 2;
@@ -154,7 +169,7 @@ export function createClassroomFeature(deps) {
       const fr = (w, h, y, zz) => {
         const b = new T.Mesh(new T.BoxGeometry(2.5, h, w), frameM);
         b.position.set(1, y, zz);
-        b.castShadow = true;
+        b.castShadow = false;
         grp.add(b);
       };
       fr(104, 4, 60, 0);
@@ -171,41 +186,8 @@ export function createClassroomFeature(deps) {
       cur2.scale.z = -1;
       grp.add(cur2);
       sc.add(grp);
-      const patch = new T.Mesh(
-        new T.PlaneGeometry(95, 125),
-        new T.MeshBasicMaterial({
-          map: patchTex(),
-          transparent: true,
-          opacity: 0.2,
-          blending: T.AdditiveBlending,
-          depthWrite: false,
-        }),
-      );
-      patch.rotation.x = -Math.PI / 2;
-      patch.rotation.z = 0.2;
-      patch.position.set(-130 + 30 * (i - 1), FLOOR + 0.3, z + 80 - 20 * i);
-      sc.add(patch);
-      R.sunPatches.push(patch);
     }
-    // sun shafts
     R.shafts = [];
-    for (let i = 0; i < 3; i++) {
-      const s = new T.Mesh(
-        new T.PlaneGeometry(130, 120),
-        new T.MeshBasicMaterial({
-          map: shaftTex(),
-          transparent: true,
-          opacity: 0.1,
-          blending: T.AdditiveBlending,
-          depthWrite: false,
-          side: T.DoubleSide,
-        }),
-      );
-      s.position.set(-235, 45, -150 + i * 150);
-      s.rotation.set(0, Math.PI / 2, -0.62);
-      sc.add(s);
-      R.shafts.push(s);
-    }
     // ceiling: tube lights, fans
     for (let i = 0; i < 6; i++) {
       const x = i % 2 ? 120 : -120,
@@ -313,33 +295,6 @@ export function createClassroomFeature(deps) {
     notice(299.2, 55, -120);
     door(299, 90);
   }
-  function patchTex() {
-    const c = cvs(128, 128),
-      g = c.getContext("2d");
-    g.fillStyle = "rgba(255,240,200,1)";
-    g.fillRect(8, 8, 52, 52);
-    g.fillRect(68, 8, 52, 52);
-    g.fillRect(8, 68, 52, 52);
-    g.fillRect(68, 68, 52, 52);
-    const t = new T.CanvasTexture(c);
-    return t;
-  }
-  function shaftTex() {
-    const c = cvs(64, 128),
-      g = c.getContext("2d"),
-      gr = g.createLinearGradient(0, 0, 64, 0);
-    gr.addColorStop(0, "rgba(255,240,200,.9)");
-    gr.addColorStop(1, "rgba(255,240,200,0)");
-    g.fillStyle = gr;
-    g.fillRect(0, 0, 64, 128);
-    const g2 = g.createLinearGradient(0, 0, 0, 128);
-    g.globalCompositeOperation = "destination-in";
-    g2.addColorStop(0, "rgba(0,0,0,1)");
-    g2.addColorStop(1, "rgba(0,0,0,.1)");
-    g.fillStyle = g2;
-    g.fillRect(0, 0, 64, 128);
-    return new T.CanvasTexture(c);
-  }
   function curtain() {
     const geo = new T.PlaneGeometry(26, 135, 14, 1),
       p = geo.attributes.position;
@@ -348,7 +303,7 @@ export function createClassroomFeature(deps) {
     geo.computeVertexNormals();
     const m = new T.Mesh(geo, M(0x9a3b3b, 0.95, 0, { side: T.DoubleSide }));
     m.rotation.y = Math.PI / 2;
-    m.castShadow = true;
+    m.castShadow = false;
     return m;
   }
   function poster(x, y, z, ry, lines) {

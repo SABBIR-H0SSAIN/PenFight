@@ -1,3 +1,4 @@
+import { gameConfig } from "../../config/config.ts";
 /** Match setup is independent of React, rendering, and input handling. */
 export function penColorFor(PF, selection) {
   return (
@@ -42,10 +43,13 @@ export function buildMatchOptions(PF, settings, preferences, mode) {
         : L.algo;
     return {
       humans: [true, false],
-      names: [settings.name || "You", "AI"],
+      names: [settings.name || "You", gameConfig.matches.aiName],
       pens: [selection.pen, selection.pen],
       penColors: versusPenColors(PF, selection),
-      goal: mode === "train" ? 99 : 3,
+      goal:
+        mode === "train"
+          ? gameConfig.matches.trainingGoal
+          : gameConfig.matches.versusGoal,
       ai: [
         null,
         aiConfigFor(PF, { level: selection.difficulty, algo: algorithm }),
@@ -56,8 +60,8 @@ export function buildMatchOptions(PF, settings, preferences, mode) {
   }
   if (mode === "pvp") {
     const p = preferences.pvp,
-      n1 = p.name1.trim() || "Player 1",
-      n2 = p.name2.trim() || "Player 2";
+      n1 = p.name1.trim() || gameConfig.preferences.pvp.name1,
+      n2 = p.name2.trim() || gameConfig.preferences.pvp.name2;
     return {
       humans: [true, true],
       names: [n1, n1 === n2 ? n2 + " (2)" : n2],
@@ -76,7 +80,7 @@ export function buildMatchOptions(PF, settings, preferences, mode) {
     names: [PF.SHORT[a.a], PF.SHORT[a.b] + (a.a === a.b ? " (2)" : "")],
     pens: [a.penA.pen, a.penB.pen],
     penColors: [penColorFor(PF, a.penA), penColorFor(PF, a.penB)],
-    goal: 5,
+    goal: gameConfig.matches.aiGoal,
     ai: [
       aiConfigFor(PF, { level: a.sa, algo: a.a }),
       aiConfigFor(PF, { level: a.sb, algo: a.b }),

@@ -1,4 +1,5 @@
 "use client";
+import { CONFIG_LIMITS } from "@/config/config";
 import {
   useGamePreferences,
   useGameServices,
@@ -8,6 +9,7 @@ export function GameHud() {
   const services = useGameServices(),
     state = useGameState([
       "mode",
+      "cameraPinned",
       "human",
       "title",
       "names",
@@ -52,7 +54,7 @@ export function GameHud() {
                 services.controller?.setSpeed(Number(event.target.value))
               }
             >
-              {[1, 2, 4].map((speed) => (
+              {CONFIG_LIMITS.speeds.map((speed) => (
                 <option value={speed} key={speed}>
                   {speed}×
                 </option>
@@ -89,7 +91,12 @@ export function GameHud() {
         <button
           className="tb"
           aria-label="Follow camera"
-          title="Follow the moving pen"
+          title={
+            state.cameraPinned
+              ? "Unpin the camera to use Follow"
+              : "Follow the moving pen"
+          }
+          disabled={state.cameraPinned}
           aria-pressed={settings.follow}
           onClick={() => setSettings({ follow: !settings.follow })}
         >

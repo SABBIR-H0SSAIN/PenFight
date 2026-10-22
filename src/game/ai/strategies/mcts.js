@@ -1,10 +1,12 @@
+import { gameConfig } from "../../../config/config.ts";
 /** mcts decision logic; no React or browser state. */
 export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
   function* mctsAI(state, me, cfg, ctx) {
+    cfg = { ...gameConfig.ai.budgets.mcts, ...cfg };
     const live = ctx.live,
-      N = cfg.iters || 1500,
-      C = cfg.c || 0.8,
-      maxD = cfg.depth || 3;
+      N = cfg.iters,
+      C = cfg.c,
+      maxD = cfg.depth;
     // root prior: best K actions by deterministic heuristic
     const all = PF.allActions(state, me),
       scored = [];
@@ -13,7 +15,7 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       scored.push({ act: a, ...r });
       if ((scored.length & 31) === 0) yield* slice(ctx);
     }
-    const rootActs = topMoves(scored, cfg.rootK || 24).map((m) => m.act);
+    const rootActs = topMoves(scored, cfg.rootK).map((m) => m.act);
     const root = {
       mover: 1 - me,
       N: 0,
@@ -100,7 +102,7 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
         path.push(node);
         ctx.nodes++;
         if (P[0].out || P[1].out) term = true;
-        if (live.nodes.length < 420)
+        if (live.nodes.length < cfg.maxVisibleNodes)
           live.nodes.push({
             id: kid.id,
             p: kid.parent.id,
@@ -110,9 +112,13 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
             n: 0,
           });
       }
-      // rollout (one random ply each, up to depth limit + 1)
+      // Roll out extra moves beyond the selected/expanded tree node.
       let steps = 0;
-      while (!term && steps < 1 && depth < maxD + 1) {
+      while (
+        !term &&
+        steps < cfg.rolloutDepth &&
+        depth < maxD + cfg.rolloutDepth
+      ) {
         const as = actsFor(P, who);
         const a = as[Math.floor(ctx.rng() * as.length)];
         const r = PF.shoot(P, who, a, { noise: nz, rng: ctx.rng, maxT: 3.6 });

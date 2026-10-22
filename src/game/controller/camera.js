@@ -1,19 +1,18 @@
-export const CAMERA_PRESETS = {
-  overview: { azimuth: 30, elevation: 65 },
-  top: { azimuth: 0, elevation: 89 },
-  side: { azimuth: 90, elevation: 55 },
-  player: { azimuth: 0, elevation: 58 },
-};
+import { gameConfig, CONFIG_LIMITS } from "../../config/config.ts";
+export const CAMERA_PRESETS = gameConfig.camera.presets;
 
 // The ceiling is at 225, with lights and fans hanging down to about 200.
 // A fixed orbit also prevents rotation from repeatedly zooming in and out.
-export const DESK_CAMERA_RADIUS = 170;
+export const DESK_CAMERA_RADIUS = gameConfig.camera.radius;
 export function overviewCamera(aspect) {
   return {
     preset: "overview",
-    zoom: 1,
-    ...(aspect < 0.85
-      ? { azimuth: 0, elevation: 72 }
+    zoom: gameConfig.camera.defaultZoom,
+    ...(aspect < gameConfig.camera.portrait.aspectThreshold
+      ? {
+          azimuth: gameConfig.camera.portrait.azimuth,
+          elevation: gameConfig.camera.portrait.elevation,
+        }
       : CAMERA_PRESETS.overview),
   };
 }
@@ -22,14 +21,25 @@ export function shortestAngle(from, to) {
   return Math.atan2(Math.sin(to - from), Math.cos(to - from));
 }
 
-export function cameraAngle(azimuth, elevation, preset = "custom", zoom = 1) {
+export function cameraAngle(
+  azimuth,
+  elevation,
+  preset = "custom",
+  zoom = gameConfig.camera.defaultZoom,
+) {
   const wrapped = ((((azimuth + 180) % 360) + 360) % 360) - 180;
   return {
     preset,
     // Keep the range input's right endpoint on the right while it is held.
     azimuth: wrapped === -180 && azimuth > 0 ? 180 : wrapped,
-    elevation: Math.max(45, Math.min(89, elevation)),
-    zoom: Math.max(0.5, Math.min(2, zoom)),
+    elevation: Math.max(
+      CONFIG_LIMITS.elevation.min,
+      Math.min(CONFIG_LIMITS.elevation.max, elevation),
+    ),
+    zoom: Math.max(
+      CONFIG_LIMITS.zoom.min,
+      Math.min(CONFIG_LIMITS.zoom.max, zoom),
+    ),
   };
 }
 
@@ -68,8 +78,10 @@ export function deskFov(position, target, aspect) {
         depth = Math.max(1, radius - (cx * dx + cy * dy + cz * dz) / radius);
       tangent = Math.max(
         tangent,
-        Math.abs(cx * rx + cz * rz) / (depth * safeAspect * 0.92),
-        Math.abs(cx * ux + cy * uy + cz * uz) / (depth * 0.8),
+        Math.abs(cx * rx + cz * rz) /
+          (depth * safeAspect * gameConfig.camera.horizontalFit),
+        Math.abs(cx * ux + cy * uy + cz * uz) /
+          (depth * gameConfig.camera.verticalFit),
       );
     }
   return Math.max(25, Math.min(165, (Math.atan(tangent) * 360) / Math.PI));

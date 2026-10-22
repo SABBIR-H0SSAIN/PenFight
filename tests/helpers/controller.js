@@ -2,6 +2,9 @@ import { registerHooks } from "node:module";
 import * as THREE from "three";
 import { createGameEngine } from "../../src/game/engine.js";
 import { createUiStore } from "../../src/game/state/store.ts";
+import { sceneFixture } from "./scene.js";
+import { createCharacterFeature } from "../../src/features/character/scene/character-scene.js";
+import { disposeObjectTree } from "../../src/game/scene/dispose.js";
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -17,7 +20,10 @@ const { createController } =
   await import("../../src/game/controller/controller.js");
 
 /** Drive the real controller and physics with a virtual animation clock, without WebGL. */
-export function controllerFixture(t) {
+export function controllerFixture(
+  t,
+  { realCharacters = false, stepMs = 50, seed } = {},
+) {
   const frames = new Map(),
     captured = new Set();
   let id = 0,
@@ -80,10 +86,16 @@ export function controllerFixture(t) {
   });
   const pens = [],
     shots = [],
+    shotContacts = [],
     hints = [];
+  const characters = realCharacters
+    ? [0, 1].map((slot) =>
+        createCharacterFeature(sceneFixture().deps).makeStudent(slot),
+      )
+    : [student(), student()];
   const world = {
     camera: new THREE.PerspectiveCamera(42, 1000 / 700, 1, 1500),
-    students: [student(), student()],
+    students: characters,
     deskMesh: { position: { y: -2 } },
     board: {},
     quality: "high",
@@ -110,9 +122,22 @@ export function controllerFixture(t) {
   };
   const engine = createGameEngine(),
     ui = createUiStore();
+  if (seed !== undefined) {
+    const rng = engine.rng;
+    engine.rng = (value) => rng(seed ?? value);
+  }
   const shoot = engine.shoot;
   engine.shoot = (...args) => {
-    if (args[3]?.record) shots.push(args);
+    if (args[3]?.record) {
+      shots.push(args);
+      const rig = world.students[args[1]];
+      shotContacts.push({
+        who: args[1],
+        tip: rig.arm[0].tip.clone(),
+        target: rig.contactTarget && { ...rig.contactTarget },
+        time,
+      });
+    }
     return shoot(...args);
   };
   const soundCalls = [];
@@ -129,6 +154,11 @@ export function controllerFixture(t) {
   t.after(async () => {
     controller.dispose();
     await Promise.resolve();
+    if (realCharacters)
+      for (const rig of characters) {
+        disposeObjectTree(rig.group);
+        disposeObjectTree(rig.arms);
+      }
     for (const [key, descriptor] of originals) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
       else delete globalThis[key];
@@ -136,18 +166,20 @@ export function controllerFixture(t) {
   });
   async function advance(count = 1) {
     for (let i = 0; i < count; i++) {
-      time += 50;
+      time += stepMs;
       const pending = [...frames.values()];
       frames.clear();
       pending.forEach((callback) => callback(time));
       for (let j = 0; j < 12; j++) await Promise.resolve();
     }
   }
-  function point(who = 0) {
+  function point(who = 0, offset = 0) {
     world.camera.updateMatrixWorld(true);
-    const p = new THREE.Vector3(pens[who].x - 30, 0, pens[who].y - 50).project(
-      world.camera,
-    );
+    const p = new THREE.Vector3(
+      pens[who].x - 30 + Math.cos(pens[who].a) * offset,
+      0,
+      pens[who].y - 50 + Math.sin(pens[who].a) * offset,
+    ).project(world.camera);
     return {
       x: ((p.x + 1) * canvas.clientWidth) / 2,
       y: ((1 - p.y) * canvas.clientHeight) / 2,
@@ -177,6 +209,8 @@ export function controllerFixture(t) {
     pointer,
     captured,
     shots,
+    shotContacts,
+    pens,
     hints,
     soundCalls,
   };

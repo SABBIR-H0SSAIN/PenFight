@@ -1,4 +1,4 @@
-import { drawBenchWriting } from "./bench-writing.js";
+import { gameConfig } from "../../../config/config.ts";
 import { woodUv } from "./wood-uv.js";
 import { createOriginalBenchTexture } from "../../table/scene/original-bench-texture.js";
 import { release } from "../../../game/scene/dispose.js";
@@ -60,7 +60,8 @@ export function createFurnitureLibrary(deps) {
         { ...deps, W: 60, H: 100 },
         surface,
         {
-          resolution: R.quality === "low" ? 512 : 1024,
+          resolution:
+            gameConfig.graphics.quality[R.quality || "high"].woodTextureSize,
         },
       );
       const map = configureBenchTexture(deps.ctex(canvas), deps);
@@ -134,7 +135,7 @@ export function createFurnitureLibrary(deps) {
             pz = p.getZ(i);
           const [u, v] =
             layout === "bench"
-              ? [px / width + 0.5, pz / depth + 0.5]
+              ? [px / width + 0.5, 0.5 - pz / depth]
               : woodUv(px, pz, width, depth, variant);
           uv.setXY(i, u, v);
           if (dish)
@@ -174,43 +175,6 @@ export function createFurnitureLibrary(deps) {
     m.scale.set(radius, d.length(), radius);
     m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
     return m;
-  }
-  function writing(width, depth, variation = 0, hero = false) {
-    const variant = ((variation % 6) + 6) % 6;
-    const key = `bench-writing:${variant}:${hero}`;
-    if (!materials.has(key)) {
-      const size = hero && R.quality !== "low" ? 1024 : 512;
-      const canvas = deps.cvs(
-        size,
-        hero ? Math.round((size * depth) / width) : size,
-      );
-      drawBenchWriting(canvas, deps.FONT, variant, hero);
-      const map = deps.ctex(canvas);
-      map.name = key;
-      materials.set(
-        key,
-        new T.MeshBasicMaterial({
-          map,
-          transparent: true,
-          depthWrite: false,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-          polygonOffsetUnits: -1,
-        }),
-      );
-    }
-    const layer = new T.Mesh(
-      geometry(
-        `writing-plane:${width}:${depth}`,
-        () => new T.PlaneGeometry(width, depth),
-      ),
-      materials.get(key),
-    );
-    layer.name = "school-bench-writing";
-    layer.rotation.x = -Math.PI / 2;
-    layer.position.y = 0.025;
-    layer.renderOrder = 1;
-    return layer;
   }
   function chair(detail = true, tint = 0xf0e9dd, variation = 0) {
     const g = new T.Group();
@@ -295,6 +259,5 @@ export function createFurnitureLibrary(deps) {
     beam,
     chair,
     desk,
-    writing,
   };
 }

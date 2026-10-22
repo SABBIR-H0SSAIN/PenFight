@@ -9,11 +9,11 @@ export function woodUv(x, z, width, depth, variation = 0) {
   const cropU = Math.min(1, long / short / photoAspect) * zoom;
   const cropV = Math.min(1, photoAspect / (long / short)) * zoom;
   const along = depth > width ? z : x,
-    across = depth > width ? x : z;
+    across = depth > width ? x : -z;
   const offsetU = ([0, -0.65, 0.5, 0.7, -0.45, 0.3][i] * (1 - cropU)) / 2;
   const offsetV = ([0, 0.5, -0.6, -0.4, 0.65, -0.3][i] * (1 - cropV)) / 2;
   return [
-    0.5 + (along / long) * cropU * (i % 2 ? -1 : 1) + offsetU,
+    0.5 + (along / long) * cropU + offsetU,
     0.5 + (across / short) * cropV + offsetV,
   ];
 }

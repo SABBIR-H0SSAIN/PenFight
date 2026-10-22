@@ -26,3 +26,7 @@ These sources do not imply creator endorsement. CC0 does not require attribution
 ## Rebuilding
 
 Run `python3 scripts/prepare-audio.py /path/to/source-cache` from the repository root. The optional preparation script requires NumPy plus FFmpeg or macOS `afconvert`; the game itself requires none of those tools. Source files are cached outside the repository. Regenerated hashes can differ between decoder implementations; review the resulting manifest and run the audio tests after rebuilding.
+
+## Runtime configuration
+
+The default recording paths and playback material profiles are in `src/config/audio.ts`; master volume/ambience defaults are in `src/config/settings.ts`. Optional public environment overrides are documented in `src/config/README.md`. Replacing a configured recording path does not change the provenance or licences of these shipped recordings. Run `tests/audio.test.js` after asset or audio-service changes.

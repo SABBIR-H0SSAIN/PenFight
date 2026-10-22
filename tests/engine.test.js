@@ -54,7 +54,7 @@ for (const pen of Object.keys(createGameEngine().PENS)) {
             { record: 1 / 60, maxT: 4.8 },
           );
           assert.deepEqual(state, before);
-          assert.ok([-1, 0, 1].includes(shot.out));
+          assert.ok([-1, 0, 1, 2].includes(shot.out));
           assert.ok(shot.rec.length > 1);
           let last = -1;
           for (const frame of shot.rec) {

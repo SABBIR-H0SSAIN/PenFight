@@ -4,6 +4,100 @@ import { createUiStore, selectUiStore } from "../src/game/state/store.ts";
 import { createScope } from "../src/game/controller/scope.js";
 import { createBenchmarkRunner } from "../src/game/ai/benchmark.js";
 import { createGameEngine } from "../src/game/engine.js";
+import { hydrateState } from "../src/game/state/preferences.js";
+import { buildMatchOptions } from "../src/game/controller/modes.js";
+
+test("every mode defaults to Matador High School and preserves saved pen choices", (t) => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  let saved = null;
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: { getItem: (key) => (key === "pfa.preferences" ? saved : null) },
+  });
+  t.after(() => {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  });
+  const engine = createGameEngine();
+  const fresh = createUiStore();
+  hydrateState(engine, fresh);
+  for (const mode of ["vs", "train", "aivai", "pvp"]) {
+    const { settings, preferences } = fresh.get();
+    assert.deepEqual(
+      buildMatchOptions(engine, settings, preferences, mode).pens,
+      ["matador_hs", "matador_hs"],
+    );
+  }
+  const preferences = structuredClone(fresh.get().preferences);
+  preferences.vs.pen = "gel";
+  preferences.train.pen = "premium";
+  preferences.ai.penA.pen = "heavy";
+  preferences.ai.penB.pen = "ball";
+  preferences.pvp.pen1.pen = "matador_smoothy";
+  preferences.pvp.pen2.pen = "gel";
+  preferences.pvp.pen1.colors.matador_smoothy = "#123456";
+  saved = JSON.stringify(preferences);
+  const returning = createUiStore();
+  hydrateState(engine, returning);
+  assert.deepEqual(returning.get().preferences, preferences);
+  for (const [mode, expected] of [
+    ["vs", ["gel", "gel"]],
+    ["train", ["premium", "premium"]],
+    ["aivai", ["heavy", "ball"]],
+    ["pvp", ["matador_smoothy", "gel"]],
+  ]) {
+    const { settings, preferences } = returning.get();
+    assert.deepEqual(
+      buildMatchOptions(engine, settings, preferences, mode).pens,
+      expected,
+    );
+  }
+});
+
+test("coercible arrays in saved pen, difficulty, algorithm and colour fields cannot break match startup", (t) => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  const saved = {
+    vs: {
+      pen: ["ball"],
+      difficulty: ["expert"],
+      colors: { ball: ["#aabbcc"] },
+    },
+    train: { algorithm: ["mcts"] },
+    ai: {
+      a: ["mcts"],
+      b: ["astar"],
+      sa: ["expert"],
+      penA: { pen: ["premium"] },
+    },
+  };
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key) =>
+        key === "pfa.preferences" ? JSON.stringify(saved) : null,
+    },
+  });
+  t.after(() => {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  });
+  const engine = createGameEngine(),
+    ui = createUiStore();
+  hydrateState(engine, ui);
+  assert.deepEqual(ui.get().preferences.vs, {
+    pen: "matador_hs",
+    difficulty: "advanced",
+    colors: {},
+  });
+  assert.equal(ui.get().preferences.ai.a, "astar");
+  assert.equal(ui.get().preferences.ai.b, "mcts");
+  assert.equal(ui.get().preferences.ai.sa, "advanced");
+  assert.equal(ui.get().preferences.train.algorithm, "auto");
+  for (const mode of ["vs", "train", "aivai", "pvp"])
+    assert.doesNotThrow(() =>
+      buildMatchOptions(engine, ui.get().settings, ui.get().preferences, mode),
+    );
+});
 
 test("unrelated state updates keep selected React snapshots stable", () => {
   const store = createUiStore(),
@@ -33,7 +127,7 @@ test("separate providers keep selections independent", () => {
       vs: { pen: "gel", colors: {}, difficulty: "beginner" },
     },
   });
-  assert.equal(b.get().preferences.vs.pen, "ball");
+  assert.equal(b.get().preferences.vs.pen, "matador_hs");
 });
 test("unmount cleanup cancels frames, timers and listeners and resolves pending frame waits", async (t) => {
   const frames = new Map();
@@ -78,8 +172,8 @@ test("stopping a benchmark cancels further round publications", async () => {
 test("persisted removed algorithms fall back to supported menu defaults", async (t) => {
   const { hydrateState } = await import("../src/game/state/preferences.js");
   const saved = {
-    train: { algorithm: "hybrid" },
-    ai: { a: "planner", b: "bfs" },
+    train: { algorithm: "bidirectional" },
+    ai: { a: "bidirectional", b: "bidirectional" },
   };
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   Object.defineProperty(globalThis, "localStorage", {
@@ -111,7 +205,12 @@ test("completed benchmarks alternate the starting player and publish final total
     options.onDecision(0, 8);
     options.onDecision(1, 12);
     yield { roundInProgress: true, turns: 1 };
-    return { winner: options.first, how: "out", turns: 2 };
+    return {
+      winner: options.first,
+      points: options.first ? [0, 1] : [1, 0],
+      how: "out",
+      turns: 2,
+    };
   };
   await createBenchmarkRunner(engine, ui).run("dfs", "astar", 4, "advanced");
   assert.deepEqual(starts, [0, 1, 0, 1]);

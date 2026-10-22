@@ -1,6 +1,8 @@
+import { gameConfig } from "../../../config/config.ts";
 /** Depth-limited MAX/MIN search over simulated shots, with worst-case replies. */
 export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
   function* minimaxAI(state, me, cfg, ctx) {
+    cfg = { ...gameConfig.ai.budgets.minimax, ...cfg };
     const live = ctx.live;
     const depth = Math.max(1, Math.floor(cfg.depth ?? 2));
     const beam = Math.max(1, Math.floor(cfg.beam ?? 8));
@@ -14,7 +16,7 @@ export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
     const candidates = topMoves(scored, beam);
     live.nodes.push({ id: 0, p: -1, d: 0, label: "AI (MAX)", order: 1 });
     function addNode(parent, level, act) {
-      if (live.nodes.length >= 260) return null;
+      if (live.nodes.length >= cfg.maxVisibleNodes) return null;
       const node = {
         id: live.nodes.length,
         p: parent,

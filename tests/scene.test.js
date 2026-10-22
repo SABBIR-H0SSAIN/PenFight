@@ -12,6 +12,59 @@ import {
   createFurnitureLibrary,
   updateFurnitureSurface,
 } from "../src/features/furniture/scene/furniture.js";
+import { woodUv } from "../src/features/furniture/scene/wood-uv.js";
+
+test("bench lettering keeps the same handedness as a face-up canvas plane", () => {
+  const { deps, sceneRoot } = sceneFixture();
+  createTableFeature(deps).desk();
+  const furniture = createFurnitureLibrary(deps);
+  const desk = furniture.desk();
+  const chair = furniture.chair();
+  for (const mesh of [
+    deps.R.deskMesh,
+    desk.getObjectByName("desk-top"),
+    chair.getObjectByName("chair-seat"),
+    chair.getObjectByName("chair-back"),
+  ]) {
+    const { position, normal, uv } = mesh.geometry.attributes;
+    let faces = 0;
+    for (let i = 0; i < position.count; i += 3) {
+      if (normal.getY(i) < 0.99) continue;
+      const dx1 = position.getX(i + 1) - position.getX(i);
+      const dz1 = position.getZ(i + 1) - position.getZ(i);
+      const dx2 = position.getX(i + 2) - position.getX(i);
+      const dz2 = position.getZ(i + 2) - position.getZ(i);
+      const du1 = uv.getX(i + 1) - uv.getX(i);
+      const dv1 = uv.getY(i + 1) - uv.getY(i);
+      const du2 = uv.getX(i + 2) - uv.getX(i);
+      const dv2 = uv.getY(i + 2) - uv.getY(i);
+      const area = dx1 * dz2 - dz1 * dx2;
+      if (Math.abs(area) < 1e-8) continue;
+      assert.ok((du1 * dv2 - dv1 * du2) / area < 0, mesh.name);
+      faces++;
+    }
+    assert.ok(faces > 0, "checked visible panel faces");
+  }
+  // Cropped/rotated grain variants must never reflect writing either.
+  for (const [width, depth] of [
+    [60, 100],
+    [100, 60],
+  ]) {
+    for (let variation = 0; variation < 6; variation++) {
+      const origin = woodUv(0, 0, width, depth, variation);
+      const x = woodUv(1, 0, width, depth, variation);
+      const z = woodUv(0, 1, width, depth, variation);
+      assert.ok(
+        (x[0] - origin[0]) * (z[1] - origin[1]) -
+          (x[1] - origin[1]) * (z[0] - origin[0]) <
+          0,
+      );
+    }
+  }
+  disposeObjectTree(sceneRoot);
+  disposeObjectTree(desk);
+  disposeObjectTree(chair);
+});
 
 test("changing furniture finish preserves the character rig and releases the previous wood material", () => {
   const { deps } = sceneFixture();
@@ -155,6 +208,40 @@ test("classroom keeps its wall scoreboard without a freestanding board behind a 
     !sceneRoot.children.some(
       (object) => object.position.x === 78 && object.position.z === -76,
     ),
+  );
+  disposeObjectTree(sceneRoot);
+});
+
+test("classroom floor is matte and windows create no light overlays or projected patterns", () => {
+  const { deps, sceneRoot, world } = sceneFixture();
+  createClassroomFeature(deps).room();
+  const floor = sceneRoot.getObjectByName("classroom-floor");
+  assert.equal(floor.material.roughness, 1);
+  assert.equal(floor.material.metalness, 0);
+  assert.equal(floor.material.envMapIntensity, 0);
+  assert.equal(
+    floor.receiveShadow,
+    true,
+    "normal furniture contact shadows remain",
+  );
+  assert.equal(world.sunPatches.length, 0);
+  assert.equal(world.shafts.length, 0);
+  const windows = sceneRoot.children.filter(
+    (object) => object.name === "classroom-window",
+  );
+  assert.equal(windows.length, 3);
+  for (const window of windows)
+    assert.ok(meshesOf(window).every((mesh) => !mesh.castShadow));
+  assert.ok(
+    meshesOf(sceneRoot).every((mesh) => {
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      return materials.every(
+        (material) => material.blending !== THREE.AdditiveBlending,
+      );
+    }),
+    "no transparent light beam overlays remain",
   );
   disposeObjectTree(sceneRoot);
 });
