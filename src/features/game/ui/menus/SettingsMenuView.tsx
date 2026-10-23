@@ -1,23 +1,18 @@
 "use client";
 import { CONFIG_LIMITS } from "@/config/config";
-import {
-  useGamePreferences,
-  useGameState,
-} from "@/features/game/runtime/GameProvider";
+import { useGamePreferences } from "@/features/game/runtime/GameProvider";
 import type { GameSettings } from "@/game/state/types";
 import { MenuPage } from "./MenuPage";
 const toggles = [
   ["amb", "Classroom ambience"],
   ["real", "Realistic physics (rolling, uneven desk)"],
   ["guide", "Aim guide"],
-  ["follow", "Camera follows the pen"],
   ["replay", "Quick highlight after a knock-off"],
   ["slowmo", "Brief impact slow motion"],
   ["fps", "Show frame rate"],
 ] as const;
 export function SettingsMenuView() {
   const { settings, setSettings } = useGamePreferences();
-  const { cameraPinned } = useGameState(["cameraPinned"]);
   return (
     <MenuPage view="settings" title="Settings">
       <label className="f">
@@ -94,12 +89,6 @@ export function SettingsMenuView() {
           {label}
           <input
             type="checkbox"
-            disabled={key === "follow" && cameraPinned}
-            title={
-              key === "follow" && cameraPinned
-                ? "Unpin the camera to use Follow"
-                : undefined
-            }
             checked={settings[key]}
             onChange={(event) => setSettings({ [key]: event.target.checked })}
           />

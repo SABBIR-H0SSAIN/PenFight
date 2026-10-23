@@ -59,7 +59,7 @@ test("registered algorithms and difficulty defaults match the allowed set", () =
   const engine = createGameEngine();
   assert.deepEqual(
     Object.keys(engine.ALGOS).sort(),
-    ["dfs", "dls", "iddfs", "best", "astar", "minimax", "mcts", "fuzzy"].sort(),
+    ["dfs", "best", "astar", "minimax", "mcts", "fuzzy"].sort(),
   );
   assert.deepEqual(
     Object.keys(engine.SHORT).sort(),
@@ -71,29 +71,10 @@ test("registered algorithms and difficulty defaults match the allowed set", () =
 });
 test("DFS uses the deepest LIFO branch and stops at a verified goal", () => {
   const { ctx, depthSearch } = setup();
-  const result = run(depthSearch({}, 0, { leafBudget: 20 }, ctx, "dfs"));
+  const result = run(depthSearch({}, 0, { leafBudget: 20 }, ctx));
   assert.equal(result.action.key, "1,2,3,2");
   assert.equal(ctx.evals, 1);
   assert.equal(ctx.live.extra.found, true);
-});
-test("DLS stops at the depth limit and reports cutoff with a playable fallback", () => {
-  const { ctx, depthSearch } = setup();
-  const result = run(
-    depthSearch({}, 0, { leafBudget: 20, depthLimit: 2 }, ctx, "dls"),
-  );
-  assert.equal(ctx.live.extra.cutoff, true);
-  assert.equal(ctx.live.extra.found, false);
-  assert.ok(ctx.live.nodes.every((n) => n.d <= 2));
-  assert.equal(ctx.evals, 1, "only the fixed fallback is simulated");
-  assert.ok(result.action.key);
-});
-test("IDDFS increases depth limits from zero to a complete four-choice shot", () => {
-  const { ctx, depthSearch } = setup();
-  run(depthSearch({}, 0, { leafBudget: 20 }, ctx, "iddfs"));
-  assert.equal(ctx.live.extra.iterations, 5);
-  assert.equal(ctx.live.extra.depthLimit, 4);
-  assert.equal(ctx.live.extra.found, true);
-  assert.equal(ctx.evals, 1);
 });
 test("minimax chooses the best worst-case reply rather than the expected reply", () => {
   const { ctx, helpers } = setup();
@@ -151,7 +132,15 @@ test("minimax chooses the best worst-case reply rather than the expected reply",
 test("obsolete decision identifiers resolve to the supported A* default", () => {
   const engine = createGameEngine();
   const state = engine.newState(["ball", "gel"], engine.rng(31), 0);
-  for (const algo of ["bidirectional", "bfs", "planner", "hybrid", "unknown"]) {
+  for (const algo of [
+    "dls",
+    "iddfs",
+    "bidirectional",
+    "bfs",
+    "planner",
+    "hybrid",
+    "unknown",
+  ]) {
     const result = engine.runSync(
       engine.decide(state, 0, { algo, seed: 42, budgetScale: 0.02 }),
     );
@@ -160,17 +149,15 @@ test("obsolete decision identifiers resolve to the supported A* default", () => 
   }
 });
 
-test("DFS and IDDFS respect configured shallow and zero depth limits", () => {
-  for (const mode of ["dfs", "iddfs"]) {
-    for (const depthLimit of [0, 2]) {
-      const { ctx, depthSearch } = setup();
-      const result = run(depthSearch({}, 0, { depthLimit }, ctx, mode));
-      assert.ok(ctx.live.nodes.every((n) => n.d <= depthLimit));
-      assert.equal(ctx.live.extra.cutoff, true);
-      assert.equal(ctx.live.extra.found, false);
-      assert.equal(ctx.evals, 1);
-      assert.ok(result.action.key);
-    }
+test("DFS respects configured shallow and zero depth limits", () => {
+  for (const depthLimit of [0, 2]) {
+    const { ctx, depthSearch } = setup();
+    const result = run(depthSearch({}, 0, { depthLimit }, ctx));
+    assert.ok(ctx.live.nodes.every((n) => n.d <= depthLimit));
+    assert.equal(ctx.live.extra.cutoff, true);
+    assert.equal(ctx.live.extra.found, false);
+    assert.equal(ctx.evals, 1);
+    assert.ok(result.action.key);
   }
 });
 

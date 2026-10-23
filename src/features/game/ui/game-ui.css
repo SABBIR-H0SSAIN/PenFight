@@ -200,7 +200,8 @@
     min-width: 0;
   }
   .lab-on #hud .tools {
-    max-width: 240px;
+    max-width: none;
+    flex-wrap: nowrap;
   }
   .lab-on #bottom {
     right: 420px;
@@ -229,10 +230,20 @@
   }
   .lab-on #hud .tools {
     max-width: none;
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
   .lab-on #think {
     top: 170px;
+  }
+}
+@media (min-width: 1101px) and (max-width: 1180px) and (orientation: landscape) {
+  .lab-on #hud {
+    grid-template-columns: 1fr;
+  }
+  .lab-on #hud .tools {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 @media (max-width: 760px), (orientation: portrait) {
@@ -288,6 +299,44 @@
   #menu input,
   #menu select {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 370px) {
+  #hud .tools {
+    gap: 4px;
+  }
+  #hud .tb {
+    min-height: 38px;
+    padding: 6px 5px;
+    gap: 3px;
+    font-size: 13px;
+  }
+  #hud .tb-icon {
+    font-size: 13px;
+  }
+  #hud #speedBox select {
+    width: 58px;
+    height: 38px;
+    min-height: 38px;
+    padding: 5px 19px 5px 6px;
+    font-size: 13px;
+  }
+  .speed-chevron {
+    right: 5px;
+  }
+}
+
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 760px) {
+  #lab {
+    height: 38%;
+  }
+  #lab .stats,
+  #lab .info {
+    display: none;
+  }
+  #lab .tabs button {
+    font-size: 13px;
   }
 }
 
@@ -355,6 +404,90 @@
 #pause .card p,
 #end .card p {
   font: 400 15px/1.5 var(--body);
+}
+
+/* A sticky note with faint khata ruling behind the handwritten menu. */
+#pause .card {
+  position: relative;
+  width: min(300px, 100%);
+  gap: 4px;
+  padding: 28px 28px 34px;
+  border: 0;
+  border-radius: 3px 3px 9px 3px;
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 23px,
+      rgba(185, 83, 78, 0.16) 24px,
+      transparent 25px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 43px,
+      rgba(72, 126, 163, 0.13) 44px,
+      transparent 45px
+    ),
+    linear-gradient(112deg, #fffef5, #fbf4df 72%, #f1e3be);
+  box-shadow:
+    3px 5px 0 rgba(111, 92, 63, 0.16),
+    12px 18px 35px rgba(19, 20, 17, 0.33);
+  transform: rotate(-1.5deg);
+}
+#pause .card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #e5d3af, #faf0db);
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  pointer-events: none;
+}
+#pause .card h2 {
+  margin: 0 0 10px;
+  padding: 0;
+  color: #aa463c;
+  font:
+    400 36px/1 "Patrick Hand",
+    "Segoe Print",
+    sans-serif;
+  text-align: center;
+}
+#pause .card .mbtn {
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2d4c72;
+  font:
+    400 23px/1.2 "Patrick Hand",
+    "Segoe Print",
+    sans-serif;
+  text-align: center;
+  box-shadow: none;
+  transition: background 0.15s ease;
+}
+#pause .card .mbtn::after {
+  display: none;
+}
+#pause .card .mbtn.primary {
+  color: #9d3f37;
+  text-decoration: underline;
+  text-decoration-color: rgba(177, 76, 61, 0.38);
+  text-underline-offset: 4px;
+}
+#pause .card .mbtn:hover {
+  background: rgba(255, 255, 255, 0.27);
+  transform: none;
+}
+#pause .card .mbtn.primary:hover {
+  background: rgba(255, 255, 255, 0.23);
+}
+#pause .card .mbtn:active {
+  background: rgba(128, 101, 65, 0.14);
 }
 @media (max-height: 500px) {
   #lab {

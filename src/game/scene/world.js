@@ -386,7 +386,7 @@ export function createWorld(PF) {
     stage: "Classroom",
     turn: "",
     note: "Search before you flick.",
-    hw: ["Ch.3  DFS and DLS", "A* worksheet", "Fuzzy rules  Q1-5"],
+    hw: ["Ch.3  Search trees", "A* worksheet", "Fuzzy rules  Q1-5"],
   };
   function drawBoard() {
     const b = R.board,

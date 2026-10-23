@@ -114,7 +114,7 @@ export function GameHud() {
             <span className="tb-icon" aria-hidden="true">
               ▤
             </span>
-            <span>AI Lab</span>
+            <span>AI Log</span>
           </button>
         )}
         <button

@@ -4,7 +4,7 @@
 
 `ui/PenSelector.tsx` is the controlled picker reused by all mode screens; `ui/PenPreview.tsx` and `ui/PenPointer.tsx` supply menu visuals. `src/config/pens.ts` owns metadata, balance and custom palettes. `catalog.js` re-exports the resolved configuration for menus and physics; `types.ts` derives `PenKind` from the raw catalogue keys.
 
-`ui/pen-selection.css` sizes cards against each selector's available width with container queries. Wide selectors use multiple columns with previews above the text; narrower selectors use readable full-width rows, and very narrow split panels stack the preview above the name. Custom-color controls wrap within the same container. Main-menu pointer graphics occupy a reserved slot in the active button rather than a measured floating position, and each SVG has its own gradient ID.
+`ui/pen-selection.css` sizes cards against each selector's available width with container queries. Wide selectors use multiple columns with previews above the text; narrower selectors use readable full-width rows, and very narrow split panels stack the preview above the name. Custom-color controls wrap within the same container. The main-menu pointer renders the supplied Matador High School GLB into a cached transparent image in the active button's reserved slot; narrow screens show only the arrow.
 
 `models/pen-models.js` handles materials, texture caching, model selection, transforms and disposal. `standard-pen.js`, `matador-high-school.js`, and `matador-smoothy.js` contain the actual mesh construction. To add a pen, add its entry in `src/config/pens.ts`, style and builder. Test both model geometry and human-vs-AI selection. Repeated selections keep the same meshes; changed selections release the previous geometry.
 

@@ -204,7 +204,7 @@ test("actual environment variables reach store, hydration, modes, camera, pens a
       settings: { vol: 0.1 },
       preferences: {
         train: { algorithm: "minimax" },
-        ai: { a: "fuzzy", b: "astar", sa: "beginner", speed: 4 },
+        ai: { a: "fuzzy", b: "astar", speed: 4 },
         pvp: { name1: "Alex", goal: 5 },
       },
       matches: { trainingGoal: 50, aiGoal: 7 },

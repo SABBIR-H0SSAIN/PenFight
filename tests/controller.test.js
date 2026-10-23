@@ -164,6 +164,41 @@ test("Escape opens and closes the game menu from a focused input without repeat 
   assert.equal(f.ui.get().paused, false);
 });
 
+test("AI Log stays closed in Two Players, including the L shortcut", (t) => {
+  const f = controllerFixture(t);
+  const pressLogShortcut = () => {
+    const event = new Event("keydown", { cancelable: true });
+    Object.assign(event, { key: "l" });
+    f.window.dispatchEvent(event);
+  };
+
+  f.controller.start("pvp");
+  pressLogShortcut();
+  assert.equal(f.ui.get().labOpen, false);
+  f.controller.toggleLab();
+  assert.equal(f.ui.get().labOpen, false);
+
+  f.controller.start("vs");
+  pressLogShortcut();
+  assert.equal(f.ui.get().labOpen, true);
+
+  f.controller.start("pvp");
+  assert.equal(f.ui.get().labOpen, false);
+});
+
+test("Follow resets when leaving or starting a match", (t) => {
+  const f = controllerFixture(t);
+  f.controller.start("pvp");
+  f.ui.set({ settings: { ...f.ui.get().settings, follow: true } });
+  f.controller.openMenu();
+  assert.equal(f.ui.get().settings.follow, false);
+
+  f.controller.start("vs");
+  f.ui.set({ settings: { ...f.ui.get().settings, follow: true } });
+  f.controller.start("pvp");
+  assert.equal(f.ui.get().settings.follow, false);
+});
+
 for (const interruption of [
   "pointercancel",
   "lostpointercapture",

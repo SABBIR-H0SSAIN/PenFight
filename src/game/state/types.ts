@@ -24,8 +24,6 @@ export interface GamePreferences {
   ai: {
     a: Algorithm;
     b: Algorithm;
-    sa: Difficulty;
-    sb: Difficulty;
     speed: number;
     penA: PenSelection;
     penB: PenSelection;

@@ -57,3 +57,29 @@ test("local multiplayer keeps independent selections and disambiguates equal nam
   assert.equal(match.goal, 5);
   assert.deepEqual(match.ai, [null, null]);
 });
+
+test("AI Battle keeps selected algorithms and pens without aim noise or random mistakes", () => {
+  const engine = createGameEngine();
+  const match = buildMatchOptions(
+    engine,
+    {},
+    {
+      ai: {
+        a: "fuzzy",
+        b: "mcts",
+        sa: "beginner",
+        sb: "advanced",
+        speed: 4,
+        penA: { pen: "gel", colors: {} },
+        penB: { pen: "heavy", colors: {} },
+      },
+    },
+    "aivai",
+  );
+  assert.deepEqual(match.ai.map(({ algo }) => algo), ["fuzzy", "mcts"]);
+  assert.deepEqual(match.ai.map(({ level }) => level), ["expert", "expert"]);
+  assert.deepEqual(match.ai.map(({ noise }) => noise), [null, null]);
+  assert.deepEqual(match.ai.map(({ mistake }) => mistake), [0, 0]);
+  assert.deepEqual(match.pens, ["gel", "heavy"]);
+  assert.equal(match.speed, 4);
+});

@@ -23,14 +23,25 @@ npm run check
 | Scene/materials  | `scene.test.js`, `furniture.test.js`: real geometry, pen GLB sizing/printing/independent colours, character reach, matching wood, material replacement/resource disposal, matte floor, no window light overlays or fan shadows, mipmap-safe canvases and filtering                                                                                                                                              |
 | Physics/AI/audio | `engine.test.js`, `ai-*.test.js`, `audio.test.js`: deterministic shots, collisions/energy, knock-off scoring, algorithm decisions and search boundaries, recorded assets, motion/ambience, cancellation/disposal and offline fallback                                                                                                                                                                           |
 
+Additional suites cover loading and falling geometry:
+
+| Area                   | Suites and checks                                                                                                                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading and caches     | `loading.test.js`: GLB and local font content hashes, shared bench painting, independent GPU resources, cache keys and cleanup.                                                                                                                                       |
+| Edge falls and scoring | `edge-fall.test.js`, `knockoff.test.js`: centre-of-mass support, all models/edges/corners, tipping and landing, rolled cap/clip clearance, interpolated mesh/desk intersections, shared-fall points in gameplay and headless matches, hand release and landing sound. |
+| Menu transitions       | `controller.test.js`: rendering and ambient updates stop during visible menu turns, resume without accumulated time, and remain active during gameplay despite a stale turn flag.                                                                                     |
+
 The pen-protection matrix contains 576 model/view/size/zoom/pointer/player combinations. Camera tests also sample very narrow/wide aspect ratios and all preset transition pairs. These are bounded, repeatable regression checks; they cannot exhaust all hardware, browser, gesture timing or configuration combinations.
 
 Focused runs:
 
 ```bash
 node --test tests/config*.test.js tests/state.test.js
-node --test tests/camera.test.js tests/gestures.test.js tests/controller.test.js
-node --test tests/playback.test.js tests/scene.test.js tests/furniture.test.js
+node --test tests/camera.test.js tests/camera-pin.test.js tests/gestures.test.js tests/controller.test.js
+node --test tests/playback.test.js tests/scene.test.js tests/furniture.test.js tests/loading.test.js
+node --test tests/engine.test.js tests/edge-fall.test.js tests/knockoff.test.js
+node --test tests/ai-*.test.js tests/audio.test.js
+npm run test:hand-motion
 ```
 
 ## Browser/device checklist
@@ -45,10 +56,18 @@ Run the built app as well as development when changing environment or rendering 
 6. Try native trackpad pinch in Chromium and Safari, ordinary wheel scroll, and pinch while aiming/paused. Board zoom must stay bounded and must not zoom the browser page during a gameplay pinch.
 7. Enable Follow after manual rotation/zoom, then turn it off or select a manual view. Run a knock-off, replay, match end, play-again and menu return. Change AI speed and use benchmark Stop without freezing the interface.
 8. Check floor tiles and every desk/chair at oblique angles: matching matte wood, no blurred light overlay or rotating fan shadow, and stable mipmap detail. Switch oak/maple/walnut repeatedly without resetting character animation or losing another owner's textures.
-9. Test `.env.local` aliases and partial JSON with valid/invalid/zero/false values; restart development or rebuild production. Verify saved choices win over defaults, and clearing the documented storage keys restores configured defaults.
+9. Check all pen cards and custom-colour panels in single and split selectors, including both AI colour panels at once. At 320 px width and a 320 × 320 viewport, confirm the loader, labels, pointing pen, and controls do not clip or overflow. Check keyboard navigation, focus restoration, interrupted page turns, and reduced-motion preferences.
+10. Send each pen model over edges and corners. Confirm the pen tips before dropping, the hand releases before playback, the mesh stays clear of the desktop, the landing sound occurs once, and each fallen pen awards its opponent one point. Repeat with both pens falling, replay enabled/disabled, and both physics settings.
+11. Test `.env.local` aliases and partial JSON with valid/invalid/zero/false values; restart development or rebuild production. Verify saved choices win over defaults, and clearing the documented storage keys restores configured defaults.
 
 Headless geometry/material assertions do not render pixels or verify native gesture delivery. Record which browser/device checks were actually performed. If browser control is unavailable or blocked, report that limitation rather than claiming visual verification.
 
-## Fixes covered by recent regression tests
+## Recorded browser coverage
 
-Playback now uses real physics sample timestamps instead of a fixed sample index. AI think time `0` no longer becomes an 800 ms fallback pause. Saved arrays cannot masquerade as pen/difficulty/algorithm IDs or colour strings during startup. Legacy colour-only storage remains usable when there is no legacy pen selection. A configured Player-view rotation offset survives turn changes. Section defaults are combined by `src/config/config.ts`; public environment accesses remain literal for Next.js build-time inlining. A production probe build confirmed both an individual alias and a partial JSON override appear in the generated browser bundle; the final build restores normal defaults.
+The earlier UI check dated **2026-10-20** exercised selectors and notebook navigation at widths from 320 to 1280 CSS px, loader bounds down to 320 × 320, keyboard focus, interrupted turns, saved Matador colours, saved walnut finish, a human-vs-AI match, and deferred AI Lab loading. It reported no overflow or browser errors and no Google Fonts requests. The temporary browser fixture was removed; these are historical observations, not a reusable automated browser suite or physical-device certification.
+
+The subsequent compact page-turn update and edge-fall update received automated checks, but no new browser certification. Operating-system reduced-motion preferences and physical mobile frame rates remain unchecked in that record. Repeat the checklist above after relevant changes. See the [hand-motion audit](hand-motion-verification.md) for the separate seated-rig contact limitation.
+
+## Reporting verification
+
+Report the command, result, revision or date, and any failed or unavailable checks. Use the test runner's current totals rather than maintaining a fixed test count here. For manual checks, include browser/device, viewport, graphics quality, mode, and steps tried. Keep reusable checks in this guide and measured hand-contact limits in the hand audit; temporary ports, removed preview fixtures, and chronological fix logs do not belong in maintained setup instructions.

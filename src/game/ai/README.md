@@ -1,10 +1,10 @@
 # AI
 
-`installAlgorithms(engine)` in `algorithms.js` registers eight algorithms: DFS, depth-limited search (DLS), iterative deepening DFS (IDDFS), greedy best-first search, A*, minimax, MCTS and fuzzy logic. Expert difficulty uses MCTS. Unknown or obsolete algorithm identifiers fall back to the configured default (A* initially); persisted selections are validated before use.
+`installAlgorithms(engine)` in `algorithms.js` registers six algorithms: DFS, greedy best-first search, A*, minimax, MCTS and fuzzy logic. Expert difficulty uses MCTS. Unknown or obsolete algorithm identifiers fall back to the configured default (A* initially); persisted selections are validated before use.
 
 | Module                     | Responsibility                                                 |
 | -------------------------- | -------------------------------------------------------------- |
-| `strategies/uninformed.js` | DFS, DLS and IDDFS                                             |
+| `strategies/uninformed.js` | DFS                                                            |
 | `strategies/search.js`     | Greedy best-first and A*-style action search                   |
 | `strategies/fuzzy.js`      | Membership functions, rules and fuzzy action choice            |
 | `strategies/minimax.js`    | Alternating MAX/MIN with worst-case opponent replies           |
@@ -18,7 +18,7 @@
 
 The search curriculum comes from the supplied Uninformed Search, Informed Search, Adversarial Search and MCTS slide decks. Fuzzy logic is included separately as requested.
 
-The shot-action tree has four levels: target, angle, power and spin. DLS defaults to depth four; a lower limit reports a cutoff. IDDFS repeats DLS from zero through four. These searches test complete shots for a knock-off goal, and return the best evaluated shot or a fixed fallback if the goal is not reached within their budget.
+The shot-action tree has four levels: target, angle, power and spin. DFS tests complete shots for a knock-off goal, and returns the best evaluated shot or a fixed fallback if the goal is not reached within its budget. A configured depth below four reports a cutoff.
 
 Bidirectional search was removed: it first simulated complete shots to discover winning leaves, then met forward/backward frontiers on their action prefixes. Those winning shots were already known, so the prefix traversal added work without finding a new solution. Friction, collisions and knock-offs do not provide a practical inverse physics transition, and the game has many possible winning end states rather than one known destination. Saved `bidirectional` selections use the existing obsolete-selection fallback.
 

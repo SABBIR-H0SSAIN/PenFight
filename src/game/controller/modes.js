@@ -75,16 +75,18 @@ export function buildMatchOptions(PF, settings, preferences, mode) {
     };
   }
   const a = preferences.ai;
+  const battleAi = (algo) => ({
+    ...aiConfigFor(PF, { level: "expert", algo }),
+    noise: null,
+    mistake: 0,
+  });
   return {
     humans: [false, false],
     names: [PF.SHORT[a.a], PF.SHORT[a.b] + (a.a === a.b ? " (2)" : "")],
     pens: [a.penA.pen, a.penB.pen],
     penColors: [penColorFor(PF, a.penA), penColorFor(PF, a.penB)],
     goal: gameConfig.matches.aiGoal,
-    ai: [
-      aiConfigFor(PF, { level: a.sa, algo: a.a }),
-      aiConfigFor(PF, { level: a.sb, algo: a.b }),
-    ],
+    ai: [battleAi(a.a), battleAi(a.b)],
     title: "AI vs AI Simulation",
     lab: true,
     speed: a.speed,

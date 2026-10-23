@@ -14,8 +14,6 @@ export const configRules: ConfigRules = {
     "preferences.ai.pen*.pen": pens,
     "preferences.pvp.pen*.pen": pens,
     "preferences.*.difficulty": difficulties,
-    "preferences.ai.sa": difficulties,
-    "preferences.ai.sb": difficulties,
     "preferences.ai.a": algorithms,
     "preferences.ai.b": algorithms,
     "preferences.train.algorithm": ["auto", ...algorithms],

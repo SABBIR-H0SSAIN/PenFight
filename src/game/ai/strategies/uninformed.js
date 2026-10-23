@@ -1,5 +1,5 @@
 import { gameConfig } from "../../../config/config.ts";
-/** DFS, DLS and IDDFS over the finite shot-action tree. */
+/** DFS over the finite shot-action tree. */
 export function createUninformedStrategy({
   clamp,
   makeAction,
@@ -108,19 +108,11 @@ export function createUninformedStrategy({
       !found && stack.length > 0 && evaluated.length >= cfg.leafBudget;
     return { evaluated, found, cutoff };
   }
-  function* depthSearch(state, me, cfg, ctx, mode) {
-    cfg = { ...gameConfig.ai.budgets[mode], ...cfg };
+  function* depthSearch(state, me, cfg, ctx) {
+    cfg = { ...gameConfig.ai.budgets.dfs, ...cfg };
     cfg.leafBudget = Math.max(1, cfg.leafBudget);
     const limit = clamp(Math.floor(cfg.depthLimit ?? maxDepth), 0, maxDepth);
-    let result;
-    if (mode === "iddfs") {
-      for (let depth = 0; depth <= limit; depth++) {
-        ctx.live.extra.iterations = depth + 1;
-        result = yield* depthPass(state, me, cfg, ctx, depth);
-        if (result.found || !result.cutoff || ctx.live.extra.budgetExhausted)
-          break;
-      }
-    } else result = yield* depthPass(state, me, cfg, ctx, limit);
+    const result = yield* depthPass(state, me, cfg, ctx, limit);
     return finish(state, me, ctx, result.evaluated, result.found);
   }
   return { depthSearch };

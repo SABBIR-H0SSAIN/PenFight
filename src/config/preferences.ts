@@ -11,8 +11,6 @@ export const preferencesConfig: GamePreferences = {
   ai: {
     a: "astar",
     b: "mcts",
-    sa: "advanced",
-    sb: "advanced",
     speed: 2,
     penA: { pen: "matador_hs", colors: {} },
     penB: { pen: "matador_hs", colors: { matador_hs: "#ef4d33" } },

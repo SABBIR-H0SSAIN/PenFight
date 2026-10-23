@@ -7,6 +7,30 @@ import { createGameEngine } from "../src/game/engine.js";
 import { hydrateState } from "../src/game/state/preferences.js";
 import { buildMatchOptions } from "../src/game/controller/modes.js";
 
+test("saved settings cannot restore a previous match's Follow choice", (t) => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  let saved = JSON.stringify({ vol: 0.4, follow: true });
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key) => (key === "pfa.settings" ? saved : null),
+      setItem: (key, value) => {
+        if (key === "pfa.settings") saved = value;
+      },
+    },
+  });
+  t.after(() => {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  });
+
+  const ui = createUiStore();
+  hydrateState(createGameEngine(), ui);
+  assert.equal(ui.get().settings.follow, false);
+  assert.equal(ui.get().settings.vol, 0.4);
+  assert.deepEqual(JSON.parse(saved), { vol: 0.4 });
+});
+
 test("every mode defaults to Matador High School and preserves saved pen choices", (t) => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   let saved = null;
@@ -66,7 +90,8 @@ test("coercible arrays in saved pen, difficulty, algorithm and colour fields can
     ai: {
       a: ["mcts"],
       b: ["astar"],
-      sa: ["expert"],
+      sa: "beginner",
+      sb: "beginner",
       penA: { pen: ["premium"] },
     },
   };
@@ -91,7 +116,8 @@ test("coercible arrays in saved pen, difficulty, algorithm and colour fields can
   });
   assert.equal(ui.get().preferences.ai.a, "astar");
   assert.equal(ui.get().preferences.ai.b, "mcts");
-  assert.equal(ui.get().preferences.ai.sa, "advanced");
+  assert.equal(Object.hasOwn(ui.get().preferences.ai, "sa"), false);
+  assert.equal(Object.hasOwn(ui.get().preferences.ai, "sb"), false);
   assert.equal(ui.get().preferences.train.algorithm, "auto");
   for (const mode of ["vs", "train", "aivai", "pvp"])
     assert.doesNotThrow(() =>
@@ -161,7 +187,7 @@ test("unmount cleanup cancels frames, timers and listeners and resolves pending 
 test("stopping a benchmark cancels further round publications", async () => {
   const ui = createUiStore(),
     runner = createBenchmarkRunner(createGameEngine(), ui);
-  const done = runner.run("dfs", "dls", 20, "beginner");
+  const done = runner.run("dfs", "astar", 20, "beginner");
   runner.stop();
   const stopped = ui.get().benchmark;
   await done;
@@ -172,8 +198,8 @@ test("stopping a benchmark cancels further round publications", async () => {
 test("persisted removed algorithms fall back to supported menu defaults", async (t) => {
   const { hydrateState } = await import("../src/game/state/preferences.js");
   const saved = {
-    train: { algorithm: "bidirectional" },
-    ai: { a: "bidirectional", b: "bidirectional" },
+    train: { algorithm: "dls" },
+    ai: { a: "iddfs", b: "dls" },
   };
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   Object.defineProperty(globalThis, "localStorage", {

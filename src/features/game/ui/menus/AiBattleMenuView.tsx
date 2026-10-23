@@ -6,7 +6,6 @@ import {
 } from "@/features/game/runtime/GameProvider";
 import { PenSelector } from "@/features/pen/ui/PenSelector";
 import { AlgorithmSelect } from "@/features/game/ui/controls/AlgorithmSelect";
-import { DifficultySelect } from "@/features/game/ui/controls/DifficultySelect";
 import { MenuPage } from "./MenuPage";
 export function AiBattleMenuView() {
   const services = useGameServices();
@@ -35,24 +34,6 @@ export function AiBattleMenuView() {
             onChange={(b) => {
               if (b !== "auto") update({ b });
             }}
-          />
-        </label>
-      </div>
-      <div className="two">
-        <label className="f">
-          A accuracy
-          <DifficultySelect
-            label="AI A accuracy"
-            value={value.sa}
-            onChange={(sa) => update({ sa })}
-          />
-        </label>
-        <label className="f">
-          B accuracy
-          <DifficultySelect
-            label="AI B accuracy"
-            value={value.sb}
-            onChange={(sb) => update({ sb })}
           />
         </label>
       </div>

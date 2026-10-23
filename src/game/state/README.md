@@ -4,4 +4,6 @@
 
 `preferences.js` hydrates client-only game services before scene features mount. It validates field types and supported IDs, clamps supported scalar ranges, rejects arrays masquerading as IDs/colours, and merges legacy pen/colour/name entries only when present. Missing or invalid saved data preserves the configured fallback. Existing player choices intentionally take precedence over environment defaults.
 
+The Follow camera button is match-only: hydration ignores and removes any old saved `follow` value, while other settings remain saved.
+
 Code defaults → optional JSON → individual public variables → saved choices → current UI changes. Defaults live in `src/config/settings.ts` and `preferences.ts`; supported choices/ranges live in `limits.ts`. See the [configuration guide](../../config/README.md) for clearing fresh-start storage, and [Testing](../../../docs/testing.md) for corrupt-storage, isolation and precedence checks. Replace nested published snapshots instead of mutating them.

@@ -7,7 +7,12 @@ export function hydrateState(engine, ui) {
     raw = storage.get("settings", {});
   const settings = { ...defaults };
   for (const key of Object.keys(defaults))
-    if (typeof raw?.[key] === typeof defaults[key]) settings[key] = raw[key];
+    if (key !== "follow" && typeof raw?.[key] === typeof defaults[key])
+      settings[key] = raw[key];
+  if (raw && typeof raw === "object" && Object.hasOwn(raw, "follow")) {
+    delete raw.follow;
+    storage.set("settings", raw);
+  }
   settings.name = settings.name.slice(0, CONFIG_LIMITS.nameLength);
   settings.vol = Number.isFinite(settings.vol)
     ? engine.clamp(settings.vol, 0, 1)
@@ -76,8 +81,6 @@ export function hydrateState(engine, ui) {
   preferences.ai = {
     a: algorithm(ai.a, preferences.ai.a),
     b: algorithm(ai.b, preferences.ai.b),
-    sa: difficulty(ai.sa, preferences.ai.sa),
-    sb: difficulty(ai.sb, preferences.ai.sb),
     speed: CONFIG_LIMITS.speeds.includes(ai.speed)
       ? ai.speed
       : preferences.ai.speed,

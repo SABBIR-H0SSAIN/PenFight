@@ -1,29 +1,55 @@
+<p align="center">
+  <a href="#how-to-play">
+    <img src="public/brand/penfight-mark.svg" alt="Pen Fight Arena — crossed blue and orange pens" width="144" height="144" />
+  </a>
+</p>
+
 <h1 align="center">Pen Fight Arena</h1>
 
+<h3 align="center">A classroom classic, rebuilt in 3D.</h3>
+
 <p align="center">
-  The classroom game of pen fight, rebuilt in 3D with AI opponents.
+  Flick your pen, knock your opponent's off the desk, and see how the AI chooses its shots.
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&amp;logo=nextdotjs&amp;logoColor=white" alt="Next.js 16.4" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/React-19.3-149ECA?style=flat-square&amp;logo=react&amp;logoColor=white" alt="React 19.3" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/Three.js-0.128-000000?style=flat-square&amp;logo=threedotjs&amp;logoColor=white" alt="Three.js 0.128" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/NEXT.JS-16.4-111827?style=for-the-badge&amp;logo=nextdotjs&amp;logoColor=white" alt="Next.js 16.4" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/REACT-19.3-087EA4?style=for-the-badge&amp;logo=react&amp;logoColor=white" alt="React 19.3" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/TYPESCRIPT-5.9-3178C6?style=for-the-badge&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/THREE.JS-0.128-7C3AED?style=for-the-badge&amp;logo=threedotjs&amp;logoColor=white" alt="Three.js 0.128" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/NODE.JS-22.18%2B-339933?style=for-the-badge&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 22.18 or newer" /></a>
 </p>
 
 <p align="center">
-  <a href="#getting-started">Getting started</a> ·
-  <a href="#game-modes">Game modes</a> ·
-  <a href="#ai-algorithms">AI algorithms</a> ·
-  <a href="docs/architecture.md">Architecture</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="#getting-started"><strong>Get started</strong></a> &nbsp;·&nbsp;
+  <a href="#how-to-play"><strong>How to play</strong></a> &nbsp;·&nbsp;
+  <a href="#game-modes"><strong>Game modes</strong></a> &nbsp;·&nbsp;
+  <a href="docs/architecture.md"><strong>Architecture</strong></a> &nbsp;·&nbsp;
+  <a href="CONTRIBUTING.md"><strong>Contribute</strong></a>
 </p>
 
 ---
 
-Two pens share a desk. Players take turns flicking their pen to knock the other one off. The round ends when a pen falls; there is no flick limit or centre-position tiebreaker.
+Aim, flick, and knock your opponent's pen off the desk. Each turn is a small test of power, angle, and spin, and the round continues until a pen falls.
 
-Play against a friend, challenge an AI opponent, or watch two algorithms compete. The practice lab lets you inspect the AI's search tree, compare candidate shots, and ask for hints during your turn.
+Play with a friend, challenge an AI opponent, or watch two algorithms face off. In Practice Lab, explore the AI's candidate shots and search tree, then request a hint for your own move.
+
+<details>
+<summary><strong>Explore the README</strong></summary>
+
+- [Features](#features)
+- [Game modes](#game-modes)
+- [How to play](#how-to-play)
+- [Controls and camera](#controls-and-camera)
+- [Pen choices](#pen-choices)
+- [AI Lab and benchmarks](#ai-lab-and-benchmarks)
+- [AI algorithms](#ai-algorithms)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Project structure](#project-structure)
+- [Development checks](#development-checks)
+
+</details>
 
 ## Features
 
@@ -42,7 +68,7 @@ Play against a friend, challenge an AI opponent, or watch two algorithms compete
 | ------------------- | --------------------------------------------------------------------------------------- |
 | **Two Players**     | Local pass-and-play matches with separate pen selections and player names.              |
 | **Play vs AI**      | Challenge beginner, advanced, or expert opponents.                                      |
-| **AI vs AI Battle** | Pick each opponent's algorithm, difficulty, and pen, then watch at 1×, 2×, or 4× speed. |
+| **AI vs AI Battle** | Pick each opponent's algorithm and pen, then watch at 1×, 2×, or 4× speed. |
 | **Practice Lab**    | Choose an opponent algorithm, keep the inspector open, and request hints on your turn.  |
 
 ### How to play
@@ -52,29 +78,65 @@ Play against a friend, challenge an AI opponent, or watch two algorithms compete
 3. Try grabbing near either end of the barrel to change the spin.
 4. Keep your pen on the desk while knocking your opponent's pen off.
 
-The scoreboard shows the match target and current round. Use the in-game menu to pause, resume, or return to mode selection. The opponent in human-vs-AI is labelled **AI**.
+The scoreboard shows the current round and, outside Practice Lab, the match target. If both pens fall during a shot, both players earn a point. Use the in-game menu to pause, resume, or return to mode selection. The opponent in human-vs-AI is labelled **AI**.
 
-Open the camera icon for Overview, Top, Side, Player, rotation, tilt, zoom, and Reset. Drag away from either pen to orbit; areas near either pen are protected from accidental rotation. Pinch with two fingers to zoom, or use trackpad pinch (Ctrl+wheel in Chromium; gesture events in Safari). Zoom ranges from 50% to 200%. Manual camera changes turn Follow off; enable Follow again to track the active pen. Choose **Pin view** in the camera panel to freeze the current view during the match. While pinned, camera gestures, presets, zoom, Follow and automatic replay/turn cameras cannot move it; pen aiming still works. Select **Pinned** to unpin. Pause/settings retain the pin; returning to the main menu or starting a new match clears it (unless configured to start pinned).
+### Controls and camera
+
+| Control                                | Action                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Press, pull back, and release your pen | Aim and flick with a mouse, touch, or stylus.                                                      |
+| Drag away from either pen              | Orbit the camera; areas near either pen are protected from accidental rotation.                    |
+| Two-finger pinch or trackpad pinch     | Zoom between 50% and 200%. Trackpad zoom uses Ctrl+wheel in Chromium and gesture events in Safari. |
+| Camera icon                            | Open Overview, Top, Side, Player, rotation, tilt, zoom, and Reset controls.                        |
+| **Follow**                             | Track the active pen; manual camera changes turn Follow off.                                       |
+| **Pin view** / **Pinned**              | Freeze the current camera view or unpin it.                                                        |
+| **Esc**                                | Pause or resume a match; return from settings opened through the pause menu.                       |
+| **L**                                  | Toggle the AI Lab during an unpaused match.                                                        |
+
+While the camera is pinned, gestures, presets, zoom, Follow, and automatic replay/turn cameras cannot move it; pen aiming still works. Pause/settings retain the pin. Returning to the main menu or starting a new match clears it unless configured to start pinned. Switching away from the game also pauses the match automatically.
+
+### Pen choices
+
+Choose from **Ball Pen**, **Gel Pen**, **Heavy Pen**, **Premium Pen**, **Matador High School**, and **Matador Smoothy**. Matador models support custom colours; High School is the default selection.
+
+Two Players excludes Premium Pen. Play vs AI and Practice Lab give both players the same pen model with contrasting colours; AI Battle allows a separate model and colour for each side. Premium Pen has a **Surge ×1.6** button for one boosted flick per round when you control it.
+
+## AI Lab and benchmarks
+
+Start Play vs AI, Practice Lab, or AI Battle, then select **Ai log** in the toolbar. Practice Lab and AI Battle open it automatically.
+
+| Tab             | What it shows                                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Moves**       | Candidate shots and scores. In Practice Lab, select **Suggest my move** and then **Play suggestion** to execute a hint. |
+| **Search tree** | The recorded search nodes and selected path.                                                                            |
+| **Details**     | Algorithm-specific decision data.                                                                                       |
+| **Benchmark**   | Headless algorithm comparisons using the real physics engine.                                                           |
+
+For a benchmark, choose two algorithms, a round count, and an accuracy level, then select **Run headless matches**. Results show wins, average milliseconds per decision, average flicks, and knock-offs. **Stop** cancels the run; only completed rounds count.
+
+Benchmarks alternate who flicks first, use Ball Pen against Gel Pen, and default to reduced search budgets configured in [`src/config/ai.ts`](src/config/ai.ts). They do not use the pen selections from the visible match. Rounds have no flick limit, so a stalled matchup can be stopped manually.
 
 ## AI algorithms
 
-The game includes eight algorithms, grouped by approach:
+The game includes six algorithms, grouped by approach:
 
-- **Uninformed search:** Depth-First Search (DFS), Depth-Limited Search (DLS), and Iterative Deepening DFS (IDDFS).
+- **Uninformed search:** Depth-First Search (DFS).
 - **Informed search:** Greedy Best-First Search and A*.
 - **Adversarial and simulation search:** Minimax and Monte Carlo Tree Search (MCTS).
 - **Rule-based control:** Fuzzy Logic.
 
 Difficulty also affects execution noise and the chance of choosing a weaker shot. The default algorithms are fuzzy logic for beginner, A* for advanced, and MCTS for expert. Practice and AI battle modes let you select an algorithm directly.
 
+AI Battle runs both selected algorithms with expert settings and no injected aiming noise or random mistakes.
+
 <details>
 <summary><strong>How the algorithms fit the game</strong></summary>
 
 Search builds a shot from four choices: target, angle, power, and spin. Candidate shots are evaluated by the same physics engine used during play.
 
-- **DLS and IDDFS** search this four-level action tree. DLS reports a cutoff when its depth limit prevents a complete shot.
+- **DFS** searches this four-level action tree and reports a cutoff if a configured depth limit prevents a complete shot.
 - **Bidirectional search was removed:** discovering winning shots first made the later forward/backward prefix search redundant; dissipative game physics has no practical inverse transition.
-- **A*** uses shot effort as its path cost and simulated shot quality as its heuristic. The heuristic is not admissible, so this budgeted adaptation does not guarantee an optimal path.
+- **A\*** uses shot effort as its path cost and simulated shot quality as its heuristic. The heuristic is not admissible, so this budgeted adaptation does not guarantee an optimal path.
 - **Minimax** alternates MAX and MIN, choosing against worst-case replies within a root shortlist and depth limit.
 - **MCTS** uses UCB selection, expansion, random rollouts, and backpropagation with a bounded action shortlist and rollout depth.
 - **Fuzzy logic** uses distance, risk, and confidence to determine flick power and attack/defend balance.
@@ -87,14 +149,16 @@ See the [AI module guide](src/game/ai/README.md) for implementation details.
 
 You need **Node.js 22.18 or newer**, npm, and a browser with WebGL support. No API keys or backend setup are required.
 
-From the repository root:
+Clone the repository and install the locked dependencies:
 
 ```bash
+git clone https://github.com/SABBIR-H0SSAIN/PenFight.git
+cd PenFight
 npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000).
+If you already have a checkout, run the last two commands from its root. Open [localhost:3000](http://localhost:3000), or the address printed by Next.js if port 3000 is occupied.
 
 For a production build:
 
@@ -104,6 +168,16 @@ npm start
 ```
 
 Player preferences and game settings are saved locally in the browser.
+
+<details>
+<summary><strong>Setup and playback tips</strong></summary>
+
+- **Node version errors:** use Node.js 22.18 or newer. The repository's [`.nvmrc`](.nvmrc) selects Node.js 22 when using `nvm use`.
+- **Blank or unavailable 3D view:** confirm WebGL is enabled in your browser. For a slow scene, choose **Low** graphics quality in Settings.
+- **No sound:** interact with the menu to activate browser audio, then check Volume and Classroom ambience in Settings.
+- **Changed defaults are not appearing:** saved browser preferences override configuration defaults. Clear this site's `pfa.settings` and `pfa.preferences` entries in browser local storage to reset them, then reload. This removes your saved choices.
+
+</details>
 
 ### Configuration
 
@@ -136,7 +210,7 @@ src/
 
 The AI and physics modules run without React or a browser. React manages the interface and scene lifecycle; the controller updates pen and character transforms directly during animation frames. AI Lab loads on demand.
 
-For data flow, resource ownership, and extension points, see [Architecture](docs/architecture.md). Development conventions live in [Contributing](CONTRIBUTING.md).
+Browse the [documentation index](docs/README.md) for maintained guides and module references. For data flow, resource ownership, and extension points, see [Architecture](docs/architecture.md). Development conventions live in [Contributing](CONTRIBUTING.md).
 
 ## Development checks
 
@@ -156,14 +230,8 @@ This runs ESLint, TypeScript, the Node.js test suite, and a production build. In
 | `npm run build`     | Build the production application.                             |
 | `npm run format`    | Format source, tests, and documentation with Prettier.        |
 
-Tests cover all supported algorithms, physics, character geometry, camera framing, mouse/touch/stylus safety, pinch cancellation, follow mode, sample-timestamp playback, preference recovery, configuration boundaries and environment precedence. See [Testing](docs/testing.md) for the suite map, focused commands, and the browser/device checklist. Headless tests do not establish visual sharpness, font layout, or native Safari/Chromium gesture delivery.
+Tests cover physics, AI, controls, state, and scene behavior. See [Testing](docs/testing.md) for coverage and browser checks. For hand animation changes, run `npm run test:hand-motion` and consult the [hand-motion audit](docs/hand-motion-verification.md). [GitHub Actions](.github/workflows/ci.yml) runs `npm run check` on pushes and pull requests.
 
-For hand animation changes, run `npm run test:hand-motion`. The [real-rig hand audit](docs/hand-motion-verification.md) records contact/motion checks and the remaining far-side reach limitation.
+---
 
-## Assets
-
-Gameplay uses local recorded pen foley, movement-driven friction, and quiet classroom/fan loops. Sources, licences and edits are documented in [audio credits](public/audio/CREDITS.md); the playback implementation lives in `src/game/audio/`.
-
-The Matador High School model is served from `public/models/pens/`. Its provenance and handling notes are recorded in the [pen asset guide](public/models/pens/README.md).
-
-The current characters use procedural geometry and do not require external head scans or skin textures. All desks and chairs share the original matte school-bench finish. The floor retains furniture shadows without window-light overlays, reflective patches, or fan rotation shadows. [Texture credits](public/textures/furniture/CREDITS.md) distinguish the archived photograph from the active procedural material. The local brand mark is in `public/brand/`, with its app icon in `src/app/icon.svg`.
+**See it in action:** Start a **Practice Lab** match to inspect the AI's candidate shots and search tree as you play. Use the **Benchmark** tab to compare algorithms under the same physics rules.

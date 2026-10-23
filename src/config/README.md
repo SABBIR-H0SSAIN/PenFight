@@ -2,19 +2,19 @@
 
 `config.ts` is the single entry point that **combines separate configuration files**. Edit the owning section file below, or optionally override it from a root `.env.local` file. No environment variables are required. Internal mesh dimensions, collision tolerances, and animation keyframes remain implementation details in their feature modules.
 
-| Section             | Configurable defaults                                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `settings`          | Player name, volume, ambience, quality, table surface, follow camera, replays, slow motion, FPS, aim guide, friction, realism                  |
-| `preferences`       | Pens and custom colours for every mode, difficulty, training algorithm, AI battle algorithms/accuracy/speed, local player names and match goal |
-| `matches`           | Versus/training/AI battle goals, opponent display name                                                                                         |
-| `camera`            | Four presets, portrait framing, default zoom/pin state, orbit radius, horizontal/vertical desk fit                                             |
-| `input`             | Pen safety radii, drag threshold, rotation/tilt sensitivity, pinch threshold, trackpad zoom sensitivity                                        |
-| `physics`           | Gravity, flick speed, spin strength, integration step, surge multiplier, simulation duration                                                   |
-| `playback`          | Recording interval, impact slow motion window/rate, highlight timing                                                                           |
-| `ai`                | Algorithm labels, difficulties/noise/mistakes/think time, search budgets, cooperative time slices, benchmark seed/budget                       |
-| `pens`, `penColors` | Pen balance, dimensions, materials/descriptions, colours and custom palettes                                                                   |
-| `audio`             | Recording paths, impact variations, material profiles, ambience gains/cutoffs, voice limit                                                     |
-| `graphics`          | Automatic quality, mobile breakpoint, exposure, anisotropy, pixel ratios, shadow resolutions, light intensities                                |
+| Section             | Configurable defaults                                                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `settings`          | Player name, volume, ambience, quality, table surface, follow camera, replays, slow motion, FPS, aim guide, friction, realism                         |
+| `preferences`       | Pens and custom colours for every mode, versus/training difficulty, training algorithm, AI battle algorithms/speed, local player names and match goal |
+| `matches`           | Versus/training/AI battle goals, opponent display name                                                                                                |
+| `camera`            | Four presets, portrait framing, default zoom/pin state, orbit radius, horizontal/vertical desk fit                                                    |
+| `input`             | Pen safety radii, drag threshold, rotation/tilt sensitivity, pinch threshold, trackpad zoom sensitivity                                               |
+| `physics`           | Gravity, flick speed, spin strength, integration step, surge multiplier, simulation duration                                                          |
+| `playback`          | Recording interval, impact slow motion window/rate, highlight timing                                                                                  |
+| `ai`                | Algorithm labels, difficulties/noise/mistakes/think time, search budgets, cooperative time slices, benchmark seed/budget                              |
+| `pens`, `penColors` | Pen balance, dimensions, materials/descriptions, colours and custom palettes                                                                          |
+| `audio`             | Recording paths, impact variations, material profiles, ambience gains/cutoffs, voice limit                                                            |
+| `graphics`          | Automatic quality, mobile breakpoint, exposure, anisotropy, pixel ratios, shadow resolutions, light intensities                                       |
 
 `CONFIG_LIMITS` in `limits.ts` centralizes supported control ranges and menu choices. These are code-level constraints shared by validation, controls, and the engine; they are not environment overrides. Keep the documented limits and validation rules aligned if extending them.
 
@@ -45,6 +45,8 @@ All of these variables are **public**, bundled into the browser at build time. R
 
 Code defaults → JSON overrides → individual environment variables → saved player settings/preferences → current in-game changes.
 
+Follow is a match-only camera control. Its button choice is not saved and resets to the configured default when a match ends or a new match starts. Old saved `follow` values are removed when settings load.
+
 Invalid higher-priority values preserve the last valid fallback. Saved player preferences intentionally survive configuration updates. To try new defaults in an existing browser, clear this site's `pfa.settings`, `pfa.preferences`, and legacy `pfa.pen`, `pfa.matadorPenColors`, `pfa.pvpNames` local-storage entries, or open a fresh browser profile. Physics, graphics, camera, and other tuning without a saved UI preference applies directly.
 
 Consumers import the resolved `gameConfig` from `config.ts`; the old pen, AI, and audio catalogues re-export its values for compatibility. `env.ts` handles validated merging without browser dependencies. `createGameConfig` is a pure resolver for tests and tooling. Each UI store clones its player preferences so separate games cannot mutate each other's defaults.
@@ -64,19 +66,19 @@ To start new matches with the view pinned, set `defaultPinned: true` in `camera.
 Edit `ai.ts` → `budgets` to tune each algorithm independently. These fields also
 support the existing `NEXT_PUBLIC_GAME_CONFIG` JSON override.
 
-| Algorithms      | Options (default)                                         | Meaning / supported range                                                        |
-| --------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| DFS, DLS, IDDFS | `depthLimit: 4`, `leafBudget: 90`, `goal: 0.5`            | Depth 0–4; leaf evaluations 15–1000; goal probability 0–1                        |
-| Best-first, A*  | `depthLimit: 4`, `evalBudget: 110 / 130`, `goal: 2/3`     | Depth 0–4; evaluations 15–1000; goal probability 0–1                             |
-| Minimax         | `depth: 2`, `beam: 8`, `maxVisibleNodes: 260`             | Lookahead 1–4 moves; root shortlist 1–16; recorded nodes 1–2000                  |
-| MCTS            | `depth: 3`, `rolloutDepth: 1`, `iters: 3000`, `rootK: 24` | Tree depth 1–5; extra rollout moves 0–5; iterations 1–10000; root shortlist 1–64 |
-| MCTS            | `c: 0.8`, `pickVisits: false`, `maxVisibleNodes: 420`     | Exploration 0.01–3; select by visits instead of reward; recorded nodes 1–2000    |
-| Fuzzy           | No search budget                                          | Chooses using fuzzy rules without a search tree                                  |
+| Algorithms     | Options (default)                                         | Meaning / supported range                                                        |
+| -------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| DFS            | `depthLimit: 4`, `leafBudget: 90`, `goal: 0.5`            | Depth 0–4; leaf evaluations 15–1000; goal probability 0–1                        |
+| Best-first, A* | `depthLimit: 4`, `evalBudget: 110 / 130`, `goal: 2/3`     | Depth 0–4; evaluations 15–1000; goal probability 0–1                             |
+| Minimax        | `depth: 2`, `beam: 8`, `maxVisibleNodes: 260`             | Lookahead 1–4 moves; root shortlist 1–16; recorded nodes 1–2000                  |
+| MCTS           | `depth: 3`, `rolloutDepth: 1`, `iters: 3000`, `rootK: 24` | Tree depth 1–5; extra rollout moves 0–5; iterations 1–10000; root shortlist 1–64 |
+| MCTS           | `c: 0.8`, `pickVisits: false`, `maxVisibleNodes: 420`     | Exploration 0.01–3; select by visits instead of reward; recorded nodes 1–2000    |
+| Fuzzy          | No search budget                                          | Chooses using fuzzy rules without a search tree                                  |
 
 Depth in a shot-action tree counts target → angle → power → spin, not future
 turns. A depth below four cannot reach a complete action, so these searches
-report a cutoff and simulate a fixed fallback shot. IDDFS increases its limit
-from zero up to `depthLimit`. Minimax and MCTS depth counts future moves.
+report a cutoff and simulate a fixed fallback shot. Minimax and MCTS depths
+count future moves.
 `maxVisibleNodes` only limits the tree recorded for the AI lab; search continues
 at its configured depth and budget. The renderer fits all recorded depths.
 

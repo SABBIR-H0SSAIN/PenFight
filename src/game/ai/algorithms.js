@@ -48,8 +48,7 @@ export function installAlgorithms(PF) {
     if (c.leafBudget)
       c.leafBudget = Math.max(15, Math.round(c.leafBudget * scale));
     let out;
-    if (["dfs", "dls", "iddfs"].includes(algo))
-      out = yield* depthSearch(state, me, c, ctx, algo);
+    if (algo === "dfs") out = yield* depthSearch(state, me, c, ctx);
     else if (algo === "best") out = yield* informed(state, me, c, ctx, false);
     else if (algo === "astar") out = yield* informed(state, me, c, ctx, true);
     else if (algo === "fuzzy") out = yield* fuzzyAI(state, me, c, ctx);

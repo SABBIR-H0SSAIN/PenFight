@@ -27,19 +27,17 @@ npm run check
 
 The contact matrix covers the player's side of the board, not every possible pen location. Passing these checks does not imply all continuous poses, frame timings, rendering angles or devices are exhaustive.
 
-## Corrections made
+## Contact and animation contract
 
-- A cross-body shot could aim the wrist from the far side of the pen and leave the index pad roughly 10–11 cm short. The wrist now approaches naturally when the requested orientation exceeds anatomical reach, with smooth rotation and unchanged bone lengths.
-- Curled resting fingers and a downward-folding thumb could enter the tabletop. The non-playing fingers now stay more open, and the thumb articulates across the palm instead of folding downward through the desk.
-- Starting a replacement motion previously left parts of the old hand tween running until later properties happened to be overwritten. `begin()` now cancels that hand's current tweens immediately while preserving the other hand's motion.
-- Victory transitions changed wrist orientation and fist curl instantly, producing a sampled fingertip jump of about 24 cm at 30 fps. Both transitions now blend smoothly.
-- The final contact check previously accepted a large gap and waited too briefly. The controller now measures the contact timeout against the actual simulation clock, rather than counting nominal 25 ms iterations. It waits up to 0.55 simulation seconds (plus frame quantization) for the rendered pad, with 0.2 cm horizontal and 0.15 cm vertical tolerances. This avoids inconsistent waiting at low frame rates or accelerated AI speed; the timeout fallback remains a limitation for unreachable targets.
+Arm segments keep their fixed lengths. Cross-body reaches may adjust wrist orientation and shift the seated rig sideways; torso/desk clearance limits forward movement. Non-playing fingers and the thumb must remain above the tabletop. Starting a replacement motion cancels that hand's old tweens, and reaction transitions blend rather than jumping between poses.
+
+The controller measures the contact timeout against simulation time. It waits up to 0.55 simulation seconds, plus frame quantization, using 0.2 cm horizontal and 0.15 cm vertical contact tolerances. This keeps timing consistent at low frame rates and accelerated AI speed. The timeout remains a fallback for unreachable targets, not proof of contact.
 
 ## Remaining limitations
 
 **Opposite-edge reach is not solved.** With a contact target at the far side (`z = −47 cm` for player 1, mirrored for player 2), the seated rig has a measured residual of roughly **34 cm** after enforcing torso/desk clearance. The solver correctly avoids stretching bones, but the controller's contact timeout can still allow the game to launch the shot without physical hand contact in that extreme case. Fixing that requires an explicit reposition/standing reach animation or another gameplay decision; the successful near-side samples must not be presented as a solution for the whole table. The audit prints this residual separately.
 
-**The original audit had no live visual checks.** Its headless results establish real geometry and timing behavior, rather than pixel rendering. A later in-app browser check is recorded below. Safari/Chromium device coverage, subtle self-intersection and subjective naturalness still need the broader [browser/device checklist](testing.md).
+Headless results establish geometry and timing, not rendered pixels. A historical in-app AI-vs-AI check observed seated bodies and reaching from an oblique view. It does not establish all-angle contact, native Safari/Chromium behavior, or physical-device coverage. Follow the [browser/device checklist](testing.md#browserdevice-checklist) for rendering, occlusion, and perceived naturalness.
 
 ## Torso/desk clearance regression
 
@@ -47,4 +45,4 @@ The former reach solver could scoot the chair forward by 13 cm while leaning the
 
 The added regression checks actual transformed body mesh triangles against the desk volume for both players at 20/60/120 fps, including idle, cross-body/center/far-side reaches, four reactions and reset. Existing near-side hand-contact and controller flick tests still pass. This covers torso clearance; it does not establish swept collision safety for every hand or reaction transition.
 
-The complete project check passes with 241 tests, lint, TypeScript and the production build. Live AI-vs-AI gameplay was checked in the in-app browser on the existing development server at `http://localhost:3000`, including an oblique view of both seated bodies and reaching. A screenshot was saved as verification evidence. Initial attempts on port 3101 failed because a development server was already running on port 3000. A transient stylesheet hot-reload error from a separate workspace change cleared on refresh; the active match rendered afterward. This is a bounded visual check, not exhaustive browser/device coverage.
+For current automated results, run `npm run test:hand-motion` and `npm run check`. Treat the measurements above as bounded audit observations; record new residuals when changing the rig, desk dimensions, or contact timing.

@@ -110,8 +110,22 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  flex: 0 0 76px;
-  height: 28px;
+  flex: 0 0 96px;
+  height: 48px;
+}
+#menu .mobile-active-arrow {
+  display: none;
+}
+@media (max-width: 760px) {
+  #menu .menu-choice-indicator {
+    height: 28px;
+  }
+  #menu .pen-pointer {
+    display: none;
+  }
+  #menu .mobile-active-arrow {
+    display: inline;
+  }
 }
 @container (max-width: 300px) {
   #menu .menu-choice-indicator {

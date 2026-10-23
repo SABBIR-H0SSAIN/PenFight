@@ -1255,6 +1255,9 @@ th {
   animation: paperEnter 0.24s ease both;
   padding: 0 6px 12px 14px;
 }
+#menu .view[data-view="main"] {
+  min-height: 100%;
+}
 @keyframes paperEnter {
   from {
     opacity: 0.3;
@@ -1448,16 +1451,19 @@ th {
   }
 }
 #menu .pen-pointer {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   width: 100%;
-  aspect-ratio: 155 / 34;
+  aspect-ratio: 170 / 80;
   pointer-events: none;
   filter: drop-shadow(1px 2px 1px rgba(33, 44, 50, 0.22));
 }
-#menu .pen-pointer svg {
+#menu .pen-pointer img {
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: contain;
 }
 #menu .scribble-footer {
   font:
@@ -1480,6 +1486,48 @@ th {
   color: #756e5f;
   border-top: 1px dashed rgba(110, 102, 88, 0.4);
   padding-top: 10px;
+}
+#menu .project-credit {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 18px;
+  margin-top: auto;
+  padding: 12px 8px 2px;
+  color: #706655;
+  font:
+    400 16px/1.3 "Patrick Hand",
+    "Segoe Print",
+    "Comic Sans MS",
+    sans-serif;
+}
+#menu .credit-byline strong {
+  font-size: 17px;
+  font-weight: 400;
+  color: #26496f;
+}
+#menu .credit-star {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #245782;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#menu .credit-github-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: currentColor;
+}
+#menu .credit-star:hover,
+#menu .credit-star:focus-visible {
+  color: #163e64;
+}
+#menu .credit-star:focus-visible {
+  outline: 2px solid #245782;
+  outline-offset: 3px;
 }
 #menu h3 {
   font:
@@ -2706,7 +2754,7 @@ th {
     font-size: 22px;
   }
   #lab {
-    height: min(68%, 650px);
+    height: min(48%, 440px);
     width: 100%;
     top: auto;
     bottom: 0;

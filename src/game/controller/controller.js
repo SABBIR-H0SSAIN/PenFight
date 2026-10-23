@@ -1417,9 +1417,10 @@ export function createController({
   }
 
   function setLab(on) {
-    G.labOpen = on;
-    ui.set({ labOpen: on });
-    if (on) labDirty = true;
+    const open = !!on && G.mode !== "pvp";
+    G.labOpen = open;
+    ui.set({ labOpen: open });
+    if (open) labDirty = true;
   }
   function publishDecision() {
     if (G.live && G.labOpen)
@@ -1447,7 +1448,16 @@ export function createController({
     });
   }
   function showEnd(title, subtitle, won) {
-    ui.set({ end: { title, subtitle, won } });
+    ui.set({
+      end: { title, subtitle, won },
+      settings: settingsForNewMatch(),
+    });
+  }
+  function settingsForNewMatch() {
+    const settings = ui.get().settings;
+    return settings.follow === gameConfig.settings.follow
+      ? settings
+      : { ...settings, follow: gameConfig.settings.follow };
   }
   function openMenu() {
     benchmark.stop(false);
@@ -1461,6 +1471,7 @@ export function createController({
     G.hint = null;
     ui.set({
       mode: "menu",
+      settings: settingsForNewMatch(),
       cameraPinned: false,
       view: "main",
       menuVisible: true,
@@ -1531,6 +1542,7 @@ export function createController({
     const algorithm = options.ai[mode === "aivai" ? 0 : 1]?.algo || "astar";
     ui.set({
       mode,
+      settings: settingsForNewMatch(),
       speed: G.speed,
       menuVisible: false,
       end: null,

@@ -22,6 +22,12 @@ Before mounting these components, `GameScene` loads the Matador GLB through the 
 
 The scene components render into a shared Three.js canvas. They return no DOM, because their visible output consists of Three.js objects. Character, classroom, and table builders live under their feature’s `scene` directory; pen asset and mesh builders live under `features/pen/models`. React props control appearance and initial pen selection; the match controller drives pen transforms and the selected match models through registered handles.
 
+## Loading and asset caching
+
+`GameCanvas` preloads the versioned Matador GLB and local handwritten font before the client runtime loads. The provider hydrates saved preferences before building meshes, so a saved wood finish does not first allocate the default finish. Bench painting is cached across scene owners while each owner retains independent GPU resources. Loading errors are published to the runtime error panel with a reload action.
+
+`next.config.ts` gives local WOFF2 files and content-versioned GLB requests a one-year immutable cache header. When replacing the GLB, update the content hash in `src/features/pen/models/assets.js`. Font filenames also include content hashes. `tests/loading.test.js` checks these hashes and cache ownership. Asset provenance stays with the assets under `public/`.
+
 ## Why this Three.js integration
 
 The existing custom hand IK, physics playback, and camera animations already operate on Three.js objects. The project uses the installed `three` package directly and matching `@types/three`, with React managing ownership and cleanup. This preserves those algorithms without adding a second render loop. Three.js is pinned to the version used by these materials and lighting APIs; upgrading it should be a separate change with visual checks.
@@ -73,3 +79,23 @@ The controller projects both pen barrels to CSS-pixel capsules before deciding b
 Pause, settings, blur, viewport changes, lost capture, menu return and disposal cancel owned gestures. Camera pose stays fixed while aiming; manual camera input disables Follow, and Follow can be re-enabled. Playback binary-searches recorded physics timestamps, including uneven and duplicate final samples, rather than assuming a fixed recording interval. Impact slowdown and highlight windows read the playback section. See [Testing](testing.md) for coverage and device checks.
 
 Camera pinning freezes the exact rendered pose, including a transition or Follow pose, and disables manual/automatic camera motion while preserving pen aiming. The camera panel exposes an accessible Pin view/Pinned toggle; Follow and view controls are disabled while pinned. Resize can update desk framing without rotating the pinned view. Pause/settings and subsequent rounds retain it; menu return/new matches reset it. `src/config/camera.ts` can set `defaultPinned` for new matches. `tests/camera-pin.test.js` covers gestures, follow/replay/turn changes, aiming, cleanup and default pinning.
+
+## Round outcomes and headless matches
+
+Physics uses centre-of-mass support: a pen may overhang while balanced, then tips around an edge or corner before landing. `src/game/physics/outcome.js` assigns one point to the opponent of each fallen pen. If both fall, both score; reaching the match goal at equal scores produces a draw. Playable and headless rounds share this rule and have no flick limit or centre-position tiebreaker.
+
+AI evaluates shots with the same physics engine. Benchmarks run without scene rendering, alternate the starting player, use Ball Pen versus Gel Pen, and apply the configured benchmark search-budget scale. Their cancellation token stops unfinished work independently of match cancellation. See the [AI guide](../src/game/ai/README.md) and [testing guide](testing.md).
+
+## Production hosting
+
+Use the supported Node.js version and locked dependencies, then run from the repository root:
+
+```bash
+npm ci
+npm run build
+npm start
+```
+
+Deploy the application with a Next.js-compatible Node runtime and its `public/` assets. The project does not configure a static export. It needs no application database, API keys, or backend game service; simulation runs in the browser and preferences remain in local storage.
+
+Set optional public configuration before building. Changes to `NEXT_PUBLIC_GAME_*` values require a new production build; saved browser preferences can still override those defaults. See the [configuration guide](../src/config/README.md). Preserve the configured asset cache headers and legacy URL redirects, and smoke-test a match, model/font/audio requests, reload persistence, and AI Lab on the deployed origin using the [browser checklist](testing.md#browserdevice-checklist).

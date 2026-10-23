@@ -29,10 +29,11 @@ function GameSurface() {
     "end",
     "menuVisible",
   ]);
+  const showLab = state.mode !== "pvp" && state.labOpen;
   return (
     <div
       id="app"
-      className={`game-runtime${state.replaying ? " replay" : ""}${state.labOpen ? " lab-on" : ""}`}
+      className={`game-runtime${state.replaying ? " replay" : ""}${showLab ? " lab-on" : ""}`}
       data-mode={state.mode}
     >
       <GameScene />
@@ -41,7 +42,7 @@ function GameSurface() {
         <GameHud />
         <GameFeedback />
         <GameControls />
-        {state.labOpen && <AiLab />}
+        {showLab && <AiLab />}
       </div>
       <GameMenu />
       <GameModals />

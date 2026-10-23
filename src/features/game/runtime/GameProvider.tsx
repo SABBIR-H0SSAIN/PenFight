@@ -85,7 +85,9 @@ export function useGamePreferences() {
   function setSettings(patch: Partial<GameSettings>) {
     const next = { ...ui.get().settings, ...patch };
     ui.set({ settings: next });
-    storage.set("settings", next);
+    const saved: Partial<GameSettings> = { ...next };
+    delete saved.follow;
+    storage.set("settings", saved);
   }
   return { preferences, settings, setPreferences, setSettings };
 }

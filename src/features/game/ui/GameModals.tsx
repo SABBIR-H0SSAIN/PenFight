@@ -27,7 +27,7 @@ export function GameModals() {
             className="mbtn"
             onClick={() => services.controller?.openMenu()}
           >
-            Quit to menu
+            Main menu
           </button>
         </GameDialog>
       )}

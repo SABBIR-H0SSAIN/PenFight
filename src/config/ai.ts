@@ -1,8 +1,6 @@
 /** Algorithm labels, difficulty presets, search budgets and benchmark defaults. */
 const algorithmNames = {
   dfs: "Depth-First Search",
-  dls: "Depth-Limited Search",
-  iddfs: "Iterative Deepening DFS",
   best: "Greedy Best-First Search",
   astar: "A* Search",
   fuzzy: "Fuzzy Logic",
@@ -11,8 +9,6 @@ const algorithmNames = {
 };
 const algorithmShortNames = {
   dfs: "DFS",
-  dls: "DLS",
-  iddfs: "IDDFS",
   best: "Best-first",
   astar: "A*",
   fuzzy: "Fuzzy",
@@ -57,8 +53,6 @@ export const aiConfig = {
     // Shot-action trees have four choices: target, angle, power, spin.
     // Limits below four produce a cutoff and a playable fallback shot.
     dfs: { leafBudget: 90, depthLimit: 4, goal: 0.5 },
-    dls: { leafBudget: 90, depthLimit: 4, goal: 0.5 },
-    iddfs: { leafBudget: 90, depthLimit: 4, goal: 0.5 },
     best: { evalBudget: 110, depthLimit: 4, goal: 2 / 3 },
     astar: { evalBudget: 130, depthLimit: 4, goal: 2 / 3 },
     // depth counts simulated moves; beam limits the root shortlist.

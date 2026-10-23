@@ -56,11 +56,9 @@ export function GameDialog({
       }}
     >
       <div className="card">
-        <span className="dialog-eyebrow">
-          {id === "pause"
-            ? "TIME OUT · CLASSROOM 07"
-            : "MATCH REPORT · CLASSROOM 07"}
-        </span>
+        {id === "end" && (
+          <span className="dialog-eyebrow">MATCH REPORT · CLASSROOM 07</span>
+        )}
         <h2 id={`${id}-title`}>{title}</h2>
         {children}
       </div>
