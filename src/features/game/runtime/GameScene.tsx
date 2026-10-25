@@ -2,7 +2,12 @@
 import { gameConfig } from "@/config/config";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Object3D } from "three";
-import { loadMatadorHighSchool } from "@/features/pen/models/load-pen-assets.js";
+import {
+  loadMatadorHighSchool,
+  loadMatadorSmoothy,
+  loadMatadorAllTime,
+  loadMatadorITeen,
+} from "@/features/pen/models/load-pen-assets.js";
 import { Character } from "@/features/character/Character";
 import { Pen } from "@/features/pen/Pen";
 import { Classroom } from "@/features/classroom/Classroom";
@@ -64,11 +69,24 @@ function Simulation() {
 export function GameScene() {
   const { ui } = useGameServices();
   const [matadorTemplate, setMatadorTemplate] = useState<Object3D | null>(null);
+  const [smoothyTemplate, setSmoothyTemplate] = useState<Object3D | null>(null);
+  const [allTimeTemplate, setAllTimeTemplate] = useState<Object3D | null>(null);
+  const [iTeenTemplate, setITeenTemplate] = useState<Object3D | null>(null);
   useEffect(() => {
     let active = true;
-    loadMatadorHighSchool()
-      .then((template) => {
-        if (active) setMatadorTemplate(template);
+    Promise.all([
+      loadMatadorHighSchool(),
+      loadMatadorSmoothy(),
+      loadMatadorAllTime(),
+      loadMatadorITeen(),
+    ])
+      .then(([highSchool, smoothy, allTime, iTeen]) => {
+        if (active) {
+          setMatadorTemplate(highSchool);
+          setSmoothyTemplate(smoothy);
+          setAllTimeTemplate(allTime);
+          setITeenTemplate(iTeen);
+        }
       })
       .catch(() => {
         if (active)
@@ -81,13 +99,25 @@ export function GameScene() {
       active = false;
     };
   }, [ui]);
-  if (!matadorTemplate) return null;
+  if (
+    !matadorTemplate ||
+    !smoothyTemplate ||
+    !allTimeTemplate ||
+    !iTeenTemplate
+  )
+    return null;
   return (
     <>
       <Renderer />
       <Classroom />
       <Table />
-      <Pen slot={0} matadorTemplate={matadorTemplate} />
+      <Pen
+        slot={0}
+        matadorTemplate={matadorTemplate}
+        smoothyTemplate={smoothyTemplate}
+        allTimeTemplate={allTimeTemplate}
+        iTeenTemplate={iTeenTemplate}
+      />
       <Pen
         slot={1}
         model={gameConfig.preferences.pvp.pen2.pen}
@@ -97,6 +127,9 @@ export function GameScene() {
           ]
         }
         matadorTemplate={matadorTemplate}
+        smoothyTemplate={smoothyTemplate}
+        allTimeTemplate={allTimeTemplate}
+        iTeenTemplate={iTeenTemplate}
       />
       <Character slot={0} />
       <Character slot={1} />

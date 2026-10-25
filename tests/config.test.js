@@ -23,9 +23,9 @@ test("partial JSON config tunes each subsystem and preserves omitted defaults", 
   const patch = {
     settings: { vol: 0.2, follow: true, quality: "low", tableSurface: "maple" },
     preferences: {
-      vs: { pen: "heavy", difficulty: "expert", colors: { ball: "#abcdef" } },
+      vs: { pen: "ball", difficulty: "expert", colors: { ball: "#abcdef" } },
       train: { algorithm: "mcts" },
-      ai: { a: "fuzzy", speed: 4, penB: { pen: "premium" } },
+      ai: { a: "fuzzy", speed: 4, penB: { pen: "matador_smoothy" } },
       pvp: { goal: 5, name1: "Alex" },
     },
     matches: { versusGoal: 7 },
@@ -194,7 +194,7 @@ test("actual environment variables reach store, hydration, modes, camera, pens a
   const result = probe({
     NEXT_PUBLIC_GAME_VOLUME: "0.3",
     NEXT_PUBLIC_GAME_AMBIENCE: "false",
-    NEXT_PUBLIC_GAME_DEFAULT_PEN: "heavy",
+    NEXT_PUBLIC_GAME_DEFAULT_PEN: "ball",
     NEXT_PUBLIC_GAME_DIFFICULTY: "expert",
     NEXT_PUBLIC_GAME_FRICTION: "1.03",
     NEXT_PUBLIC_GAME_REALISM: "false",
@@ -215,7 +215,7 @@ test("actual environment variables reach store, hydration, modes, camera, pens a
   });
   assert.equal(result.settings.vol, 0.3);
   assert.equal(result.settings.amb, false);
-  assert.equal(result.preferences.vs.pen, "heavy");
+  assert.equal(result.preferences.vs.pen, "ball");
   assert.equal(result.preferences.vs.difficulty, "expert");
   assert.equal(result.preferences.train.algorithm, "minimax");
   assert.equal(result.preferences.ai.a, "fuzzy");
@@ -237,7 +237,7 @@ test("actual environment variables reach store, hydration, modes, camera, pens a
 test("saved player choices win over environment defaults, including legacy selections", () => {
   const env = {
     NEXT_PUBLIC_GAME_VOLUME: "0.3",
-    NEXT_PUBLIC_GAME_DEFAULT_PEN: "heavy",
+    NEXT_PUBLIC_GAME_DEFAULT_PEN: "ball",
   };
   const result = probe(env, {
     "pfa.settings": { vol: 0.9 },
@@ -247,10 +247,7 @@ test("saved player choices win over environment defaults, including legacy selec
   assert.equal(result.volume, 0.3);
   assert.equal(result.preferences.vs.pen, "gel");
   assert.equal(result.preferences.vs.difficulty, "beginner");
-  assert.equal(
-    probe(env, { "pfa.pen": "premium" }).preferences.vs.pen,
-    "premium",
-  );
+  assert.equal(probe(env, { "pfa.pen": "premium" }).preferences.vs.pen, "ball");
 });
 
 test("all public scalar aliases reach their matching settings, mode and goal fields", () => {

@@ -25,11 +25,6 @@ export function installHeadlessMatches(PF) {
       const dt = now() - t0;
       if (opts.onDecision) opts.onDecision(me, dt, d.info);
       const act = PF.noisy(d.action, cfgs[me].noise, r);
-      // Premium Pen's one-time surge also works in headless matches.
-      if (state.surge[me] && state.flicks[me] >= 2) {
-        act.surge = true;
-        state.surge[me] = false;
-      }
       const res = PF.shoot(state.pens, me, act, {
         maxT: gameConfig.physics.gameplaySimulationSeconds,
       });

@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { Group } from "three";
-import { MATADOR_MODEL_URL } from "../src/features/pen/models/assets.js";
+import {
+  MATADOR_MODEL_URL,
+  SMOOTHY_MODEL_URL,
+  ALL_TIME_MODEL_URL,
+  I_TEEN_MODEL_URL,
+} from "../src/features/pen/models/assets.js";
 import { sceneFixture } from "./helpers/scene.js";
 import { createClassroomFeature } from "../src/features/classroom/scene/classroom-scene.js";
 import { createTableFeature } from "../src/features/table/scene/table-scene.js";
@@ -11,17 +16,24 @@ import { createCharacterFeature } from "../src/features/character/scene/characte
 import { createOriginalBenchTexture } from "../src/features/table/scene/original-bench-texture.js";
 import { disposeObjectTree } from "../src/game/scene/dispose.js";
 
-test("immutable model URL changes whenever the model bytes change", async () => {
-  const url = new URL(MATADOR_MODEL_URL, "http://localhost");
-  const bytes = await readFile(
-    new URL(`../public${url.pathname}`, import.meta.url),
-  );
-  assert.equal(
-    url.searchParams.get("v"),
-    createHash("sha256").update(bytes).digest("hex").slice(0, 12),
-    "bump the model URL version when replacing the GLB",
-  );
-});
+for (const modelUrl of [
+  MATADOR_MODEL_URL,
+  SMOOTHY_MODEL_URL,
+  ALL_TIME_MODEL_URL,
+  I_TEEN_MODEL_URL,
+]) {
+  test(`immutable model URL matches its GLB bytes: ${modelUrl}`, async () => {
+    const url = new URL(modelUrl, "http://localhost");
+    const bytes = await readFile(
+      new URL(`../public${url.pathname}`, import.meta.url),
+    );
+    assert.equal(
+      url.searchParams.get("v"),
+      createHash("sha256").update(bytes).digest("hex").slice(0, 12),
+      "bump the model URL version when replacing the GLB",
+    );
+  });
+}
 
 test("all font subsets are valid local WOFF2 files with matching immutable names", async () => {
   const css = await readFile(

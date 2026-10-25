@@ -1694,34 +1694,6 @@ th {
 #menu .pen-preview.pen-gel .ring {
   background: #9fe6c0;
 }
-#menu .pen-preview.pen-heavy .body {
-  background: linear-gradient(
-    90deg,
-    #121212 0 64%,
-    #f2d8da 64% 78%,
-    #ffffff 78%
-  );
-}
-#menu .pen-preview.pen-heavy .cap {
-  background: linear-gradient(90deg, #d5b46a 0 55%, #1c1c1c 55%);
-}
-#menu .pen-preview.pen-heavy .ring {
-  display: none;
-}
-#menu .pen-preview.pen-premium .body {
-  background: linear-gradient(
-    90deg,
-    #1f1f21 0 68%,
-    #d8bf7a 68% 82%,
-    #ffffff 82%
-  );
-}
-#menu .pen-preview.pen-premium .cap {
-  background: linear-gradient(90deg, #d9c28a 0 55%, #262626 55%);
-}
-#menu .pen-preview.pen-premium .ring {
-  display: none;
-}
 #menu .pen-preview.pen-matador_hs .body {
   background: var(--pen-body, #7f58de);
 }
@@ -2790,4 +2762,36 @@ th {
   #bottom .tb {
     transition: none;
   }
+}
+
+#menu .pen-preview.pen-matador_all_time .body {
+  background:
+    linear-gradient(0deg, transparent 35%, #252a2e 42% 58%, transparent 65%),
+    linear-gradient(0deg, #dce8ec80, #ffffff40 45%, #e6f2f680);
+  border: 1px solid #b6cbd1;
+}
+#menu .pen-preview.pen-matador_all_time .cap,
+#menu .pen-preview.pen-matador_all_time .clip,
+#menu .pen-preview.pen-matador_all_time .end,
+#menu .pen-preview.pen-matador_all_time .tip {
+  background: var(--pen-body, #b65646);
+}
+#menu .pen-preview.pen-matador_all_time .ring {
+  background: #e3f0f480;
+}
+
+#menu .pen-preview.pen-matador_i_teen .body {
+  background:
+    linear-gradient(0deg, #edf4f780, #edf4f740), var(--pen-body, #f3445f);
+}
+#menu .pen-preview.pen-matador_i_teen .cap,
+#menu .pen-preview.pen-matador_i_teen .clip {
+  background: #dff2f5b3;
+  border: 1px solid #b2d3db;
+}
+#menu .pen-preview.pen-matador_i_teen .ring {
+  background: #e2f3f5b3;
+}
+#menu .pen-preview.pen-matador_i_teen .end {
+  background: var(--pen-body, #f3445f);
 }

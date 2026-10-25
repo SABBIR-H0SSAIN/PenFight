@@ -7,14 +7,8 @@ interface PenSelectorProps {
   value: PenSelection;
   onChange(value: PenSelection): void;
   label: string;
-  includePremium?: boolean;
 }
-export function PenSelector({
-  value,
-  onChange,
-  label,
-  includePremium = true,
-}: PenSelectorProps) {
+export function PenSelector({ value, onChange, label }: PenSelectorProps) {
   const custom = CUSTOM_PEN_COLORS[value.pen as keyof typeof CUSTOM_PEN_COLORS];
   const color =
     value.colors[value.pen] ||
@@ -26,29 +20,24 @@ export function PenSelector({
   return (
     <section className="pen-selector" aria-label={label}>
       <div className="chips pen-options">
-        {(Object.keys(PEN_DEFINITIONS) as PenKind[])
-          .filter((key) => includePremium || key !== "premium")
-          .map((key) => {
-            const pen = PEN_DEFINITIONS[key];
-            return (
-              <button
-                type="button"
-                key={key}
-                className="pen-opt"
-                aria-pressed={key === value.pen}
-                onClick={() => onChange({ ...value, pen: key })}
-              >
-                <PenPreview
-                  model={key}
-                  color={value.colors[key] || pen.color}
-                />
-                <span className="pen-copy">
-                  {pen.name}
-                  <small>{pen.desc}</small>
-                </span>
-              </button>
-            );
-          })}
+        {(Object.keys(PEN_DEFINITIONS) as PenKind[]).map((key) => {
+          const pen = PEN_DEFINITIONS[key];
+          return (
+            <button
+              type="button"
+              key={key}
+              className="pen-opt"
+              aria-pressed={key === value.pen}
+              onClick={() => onChange({ ...value, pen: key })}
+            >
+              <PenPreview model={key} color={value.colors[key] || pen.color} />
+              <span className="pen-copy">
+                {pen.name}
+                <small>{pen.desc}</small>
+              </span>
+            </button>
+          );
+        })}
       </div>
       {custom && (
         <div className="pen-color-box">

@@ -50,7 +50,7 @@ for (const pen of Object.keys(createGameEngine().PENS)) {
           const shot = engine.shoot(
             state.pens,
             0,
-            { ang: -Math.PI / 2, pow: 1, off: 0.8, surge: pen === "premium" },
+            { ang: -Math.PI / 2, pow: 1, off: 0.8 },
             { record: 1 / 60, maxT: 4.8 },
           );
           assert.deepEqual(state, before);

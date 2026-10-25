@@ -87,7 +87,13 @@ for (const real of [false, true]) {
 test("rendered pen geometry tips around every edge and corner without passing through the desk", async () => {
   const template = await loadMatadorFixture();
   const { deps, engine } = sceneFixture();
-  const feature = createPenFeature(deps, template),
+  const feature = createPenFeature(
+      deps,
+      template,
+      await loadMatadorFixture("matador-smoothy"),
+      await loadMatadorFixture("matador-all-time"),
+      await loadMatadorFixture("matador-i-teen"),
+    ),
     pen = feature.makePen(0);
   const desk = new THREE.Box3(
     new THREE.Vector3(-29.98, -3.98, -49.98),

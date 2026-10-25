@@ -12,6 +12,9 @@ export interface PenProps {
   model?: PenKind;
   color?: string;
   matadorTemplate?: Object3D;
+  smoothyTemplate?: Object3D;
+  allTimeTemplate?: Object3D;
+  iTeenTemplate?: Object3D;
 }
 /** Owns one player's meshes. Physics drives its transform through the registered handle. */
 export function Pen({
@@ -19,11 +22,20 @@ export function Pen({
   model = gameConfig.preferences.pvp.pen1.pen,
   color,
   matadorTemplate,
+  smoothyTemplate,
+  allTimeTemplate,
+  iTeenTemplate,
 }: PenProps) {
   const { world } = useGameServices();
   useLayoutEffect(() => {
     if (!world.initialized) return;
-    const feature = createPenFeature(world.deps, matadorTemplate);
+    const feature = createPenFeature(
+      world.deps,
+      matadorTemplate,
+      smoothyTemplate,
+      allTimeTemplate,
+      iTeenTemplate,
+    );
     const pen = feature.makePen(slot);
     const handle = {
       group: pen.group,
@@ -40,9 +52,25 @@ export function Pen({
       disposeObjectTree(pen.group);
       feature.dispose();
     };
-  }, [world, slot, matadorTemplate]);
+  }, [
+    world,
+    slot,
+    matadorTemplate,
+    smoothyTemplate,
+    allTimeTemplate,
+    iTeenTemplate,
+  ]);
   useLayoutEffect(() => {
     world.pens[slot]?.setType(model, color);
-  }, [world, slot, model, color, matadorTemplate]);
+  }, [
+    world,
+    slot,
+    model,
+    color,
+    matadorTemplate,
+    smoothyTemplate,
+    allTimeTemplate,
+    iTeenTemplate,
+  ]);
   return null;
 }

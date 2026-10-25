@@ -109,7 +109,7 @@ export function createPhysics() {
       turn: firstTurn || 0,
       flicks: [0, 0],
       round: 1,
-      surge: [types[0] === "premium", types[1] === "premium"],
+      surge: [false, false],
     };
   };
   PF.cloneState = (s) => ({

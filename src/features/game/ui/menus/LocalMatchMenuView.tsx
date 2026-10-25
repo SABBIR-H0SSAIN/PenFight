@@ -40,7 +40,6 @@ export function LocalMatchMenuView() {
         <section>
           <h3>Pen 1</h3>
           <PenSelector
-            includePremium={false}
             label="Player 1 pen"
             value={value.pen1}
             onChange={(pen1) => update({ pen1 })}
@@ -49,7 +48,6 @@ export function LocalMatchMenuView() {
         <section>
           <h3>Pen 2</h3>
           <PenSelector
-            includePremium={false}
             label="Player 2 pen"
             value={value.pen2}
             onChange={(pen2) => update({ pen2 })}

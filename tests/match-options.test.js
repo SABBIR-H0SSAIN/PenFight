@@ -47,12 +47,12 @@ test("local multiplayer keeps independent selections and disambiguates equal nam
         name2: "Alex",
         goal: 5,
         pen1: { pen: "gel", colors: {} },
-        pen2: { pen: "heavy", colors: {} },
+        pen2: { pen: "ball", colors: {} },
       },
     },
     "pvp",
   );
-  assert.deepEqual(match.pens, ["gel", "heavy"]);
+  assert.deepEqual(match.pens, ["gel", "ball"]);
   assert.deepEqual(match.names, ["Alex", "Alex (2)"]);
   assert.equal(match.goal, 5);
   assert.deepEqual(match.ai, [null, null]);
@@ -71,15 +71,27 @@ test("AI Battle keeps selected algorithms and pens without aim noise or random m
         sb: "advanced",
         speed: 4,
         penA: { pen: "gel", colors: {} },
-        penB: { pen: "heavy", colors: {} },
+        penB: { pen: "ball", colors: {} },
       },
     },
     "aivai",
   );
-  assert.deepEqual(match.ai.map(({ algo }) => algo), ["fuzzy", "mcts"]);
-  assert.deepEqual(match.ai.map(({ level }) => level), ["expert", "expert"]);
-  assert.deepEqual(match.ai.map(({ noise }) => noise), [null, null]);
-  assert.deepEqual(match.ai.map(({ mistake }) => mistake), [0, 0]);
-  assert.deepEqual(match.pens, ["gel", "heavy"]);
+  assert.deepEqual(
+    match.ai.map(({ algo }) => algo),
+    ["fuzzy", "mcts"],
+  );
+  assert.deepEqual(
+    match.ai.map(({ level }) => level),
+    ["expert", "expert"],
+  );
+  assert.deepEqual(
+    match.ai.map(({ noise }) => noise),
+    [null, null],
+  );
+  assert.deepEqual(
+    match.ai.map(({ mistake }) => mistake),
+    [0, 0],
+  );
+  assert.deepEqual(match.pens, ["gel", "ball"]);
   assert.equal(match.speed, 4);
 });

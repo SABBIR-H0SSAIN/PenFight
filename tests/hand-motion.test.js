@@ -310,7 +310,7 @@ test("reach, retract, thinking and all reactions animate both actual rigs at 30/
     }
 });
 
-test("144 real-controller human flicks touch the pen across models, players, views and barrel offsets", async (t) => {
+test("real-controller human flicks touch the pen across models, players, views and barrel offsets", async (t) => {
   let index = 0,
     worstError = 0,
     lowestMovingVertex = Infinity;
@@ -438,9 +438,9 @@ test("144 real-controller human flicks touch the pen across models, players, vie
             );
           }
       });
-  assert.equal(index, 144);
+  assert.equal(index, Object.keys(gameConfig.pens).length * 2 * 4 * 3);
   t.diagnostic(
-    `144 real human shots; worst impulse-time pad error ${worstError.toFixed(3)} cm; lowest moving-hand vertex ${lowestMovingVertex.toFixed(3)} cm`,
+    `${index} real human shots; worst impulse-time pad error ${worstError.toFixed(3)} cm; lowest moving-hand vertex ${lowestMovingVertex.toFixed(3)} cm`,
   );
 });
 

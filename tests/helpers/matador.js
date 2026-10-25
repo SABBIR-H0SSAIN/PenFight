@@ -2,13 +2,13 @@ import { readFile } from "node:fs/promises";
 import { Texture } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export async function loadMatadorFixture() {
+export async function loadMatadorFixture(model = "matador-hi-school") {
   const data = await readFile(
-    new URL("../../public/models/pens/matador-hi-school.glb", import.meta.url),
+    new URL(`../../public/models/pens/${model}.glb`, import.meta.url),
   );
   const loader = new GLTFLoader();
   // Node has no image decoder. Load actual GLB meshes/materials; browser smoke
-  // checks cover its two embedded PNG decals.
+  // checks cover the embedded PNG decals.
   loader.register(() => ({
     name: "HeadlessTextureAdapter",
     loadTexture: () => Promise.resolve(new Texture()),

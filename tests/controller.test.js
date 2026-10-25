@@ -206,17 +206,16 @@ for (const interruption of [
   "blur",
   "hidden",
 ]) {
-  test(`${interruption} cancels a charged aim without firing or spending surge`, async (t) => {
+  test(`${interruption} cancels a charged aim without firing`, async (t) => {
     const f = controllerFixture(t);
     f.ui.set({
       preferences: {
         ...f.ui.get().preferences,
-        train: { ...f.ui.get().preferences.train, pen: "premium" },
+        train: { ...f.ui.get().preferences.train, pen: "matador_hs" },
       },
     });
     f.controller.start("train");
     await f.advance(100);
-    f.controller.toggleSurge();
     const p = f.point();
     f.pointer("pointerdown", p);
     f.pointer("pointermove", { x: p.x + 130, y: p.y + 90 });
@@ -232,14 +231,14 @@ for (const interruption of [
     assert.equal(f.shots.length, 0);
     assert.equal(f.captured.size, 0);
     assert.equal(f.ui.get().power, null);
-    assert.equal(f.ui.get().surge.available, true);
+    assert.equal(f.ui.get().surge.visible, false);
     if (f.ui.get().paused) f.controller.resume();
     await f.advance(50);
     const retry = f.point();
     f.pointer("pointerdown", retry);
     f.pointer("pointerup", { x: retry.x + 100, y: retry.y + 80 });
     await f.advance(40);
-    assert.equal(f.shots[0][2].surge, true);
+    assert.equal(f.shots[0][2].surge, false);
     assert.equal(f.ui.get().surge.available, false);
   });
 }

@@ -20,9 +20,9 @@ export const audioConfig = {
   },
   profiles: {
     default: { rate: 1, cutoff: 5800, gain: 1 },
-    heavy: { rate: 0.8, cutoff: 4200, gain: 1.12 },
-    premium: { rate: 0.92, cutoff: 7600, gain: 1.05 },
     matador_hs: { rate: 1.12, cutoff: 6600, gain: 0.83 },
+    matador_i_teen: { rate: 1.02, cutoff: 5600, gain: 0.92 },
+    matador_all_time: { rate: 1.06, cutoff: 6100, gain: 0.88 },
     matador_smoothy: { rate: 0.97, cutoff: 4300, gain: 0.88 },
   },
 };

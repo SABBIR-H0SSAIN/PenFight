@@ -1,4 +1,6 @@
 import { buildMatadorHighSchool } from "./matador-high-school.js";
+import { buildMatadorITeen } from "./matador-i-teen.js";
+import { buildMatadorAllTime } from "./matador-all-time.js";
 import { buildMatadorSmoothy } from "./matador-smoothy.js";
 import { buildStandardPen } from "./standard-pen.js";
 import { disposeObjectTree, release } from "../../../game/scene/dispose.js";
@@ -21,7 +23,13 @@ function crossSectionHull(points) {
   return [...half(points), ...half([...points].reverse())];
 }
 /* Pen feature: meshes, materials, and snapshots rendered from physics state. */
-export function createPenFeature(deps, matadorTemplate) {
+export function createPenFeature(
+  deps,
+  matadorTemplate,
+  smoothyTemplate,
+  allTimeTemplate,
+  iTeenTemplate,
+) {
   const { THREE: T, PF, W, H, cvs, ctex, M } = deps;
   const shared = {};
   const tipAxis = new T.Vector3();
@@ -38,20 +46,14 @@ export function createPenFeature(deps, matadorTemplate) {
       cap: 0x2b2f36,
       grip: 0x1c2026,
     },
-    heavy: {
-      body: { c: 0x30323a, r: 0.35, m: 0.85 },
-      cap: 0x1a1b1f,
-      grip: 0xb8892b,
-    },
-    premium: {
-      body: { c: 0x131316, r: 0.22, m: 0.7 },
-      cap: 0xb8892b,
-      grip: 0xd9d9de,
-    },
     matador_hs: {
       body: { c: 0x00e35b, r: 0.28, m: 0.06 },
       cap: 0xf5f5f7,
       grip: 0xf3cd60,
+    },
+    matador_i_teen: { body: { c: 0xf3445f } },
+    matador_all_time: {
+      body: { c: 0xb65646 },
     },
     matador_smoothy: {
       body: { c: 0xefc8cf, r: 0.62, m: 0.02 },
@@ -106,21 +108,27 @@ export function createPenFeature(deps, matadorTemplate) {
       r = P.r,
       g = new T.Group();
     const chosen = customColor ? hexInt(customColor, S.body.c) : S.body.c;
-    const bodyM =
-      type === "matador_smoothy" || type === "matador_hs"
-        ? null
-        : new T.MeshStandardMaterial({
-            color: chosen,
-            roughness: S.body.r,
-            metalness: S.body.m,
-            transparent: S.body.a != null,
-            opacity: S.body.a || 1,
-            envMapIntensity: 1,
-          });
+    const bodyM = [
+      "matador_smoothy",
+      "matador_hs",
+      "matador_all_time",
+      "matador_i_teen",
+    ].includes(type)
+      ? null
+      : new T.MeshStandardMaterial({
+          color: chosen,
+          roughness: S.body.r,
+          metalness: S.body.m,
+          transparent: S.body.a != null,
+          opacity: S.body.a || 1,
+          envMapIntensity: 1,
+        });
     const addBand = !customColor && tint;
     const builders = {
       matador_hs: buildMatadorHighSchool,
       matador_smoothy: buildMatadorSmoothy,
+      matador_all_time: buildMatadorAllTime,
+      matador_i_teen: buildMatadorITeen,
     };
     const builder = builders[type] || buildStandardPen;
     builder({
@@ -137,7 +145,12 @@ export function createPenFeature(deps, matadorTemplate) {
       addLabel,
       type,
       bodyM,
-      template: matadorTemplate,
+      template: {
+        matador_hs: matadorTemplate,
+        matador_smoothy: smoothyTemplate,
+        matador_all_time: allTimeTemplate,
+        matador_i_teen: iTeenTemplate,
+      }[type],
     });
     // Keep the original model proportions. Its lowest cap/clip vertex sets
     // resting height, including when rolled before tipping about an edge.
@@ -199,7 +212,15 @@ export function createPenFeature(deps, matadorTemplate) {
     const i = p.i;
     if (p.model) {
       p.holder.remove(p.model);
-      disposeObjectTree(p.model, p.type === "matador_hs");
+      disposeObjectTree(
+        p.model,
+        [
+          "matador_hs",
+          "matador_smoothy",
+          "matador_all_time",
+          "matador_i_teen",
+        ].includes(p.type),
+      );
     }
     p.model = penModel(
       type,

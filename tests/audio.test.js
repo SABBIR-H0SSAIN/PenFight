@@ -182,7 +182,7 @@ test("contacts vary, pan with the scene, and distinguish pen material profiles",
   const f = fixture();
   f.sound.setAmbience(false);
   await f.sound.init();
-  f.sound.hit(100, { pen: "heavy", pan: -0.6 });
+  f.sound.hit(100, { pen: "ball", pan: -0.6 });
   f.sound.hit(100, { pen: "matador_hs", pan: 0.7 });
   const context = f.contexts[0];
   assert.notEqual(context.sources[0].buffer.key, context.sources[1].buffer.key);

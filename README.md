@@ -97,9 +97,9 @@ While the camera is pinned, gestures, presets, zoom, Follow, and automatic repla
 
 ### Pen choices
 
-Choose from **Ball Pen**, **Gel Pen**, **Heavy Pen**, **Premium Pen**, **Matador High School**, and **Matador Smoothy**. Matador models support custom colours; High School is the default selection.
+Choose from **Ball Pen**, **Gel Pen**, **Matador High School**, **Matador Smoothy**, **Matador All Time**, and **Matador i-teen**. Matador models support custom colours; High School is the default selection. All Time supports matching custom colours on its cap and end parts; its researched product details and estimated game balance are documented in [pen physics](docs/pen-physics.md).
 
-Two Players excludes Premium Pen. Play vs AI and Practice Lab give both players the same pen model with contrasting colours; AI Battle allows a separate model and colour for each side. Premium Pen has a **Surge ×1.6** button for one boosted flick per round when you control it.
+Play vs AI and Practice Lab give both players the same pen model with contrasting colours; AI Battle allows a separate model and colour for each side.
 
 ## AI Lab and benchmarks
 

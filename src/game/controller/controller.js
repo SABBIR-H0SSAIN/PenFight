@@ -462,9 +462,7 @@ export function createController({
     while (P.ei < P.events.length && P.events[P.ei].t <= P.t) {
       const e = P.events[P.ei++];
       if (e.type === "hit") {
-        const pen =
-          G.pens.find((kind) => kind === "heavy" || kind === "premium") ||
-          G.pens[P.who];
+        const pen = G.pens[P.who];
         Snd.hit(e.speed, { pen, pan: soundPan(e.x, e.y) });
         G.shake = Math.max(G.shake, clamp(e.speed / 220, 0.1, 0.8));
         const w = P.who;
@@ -1441,7 +1439,7 @@ export function createController({
     G.surge = false;
     ui.set({
       surge: {
-        visible: G.pens[0] === "premium" && G.humans[0],
+        visible: false,
         available: !!G.state?.surge[0],
         enabled: false,
       },

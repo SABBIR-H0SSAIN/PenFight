@@ -18,7 +18,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/models/pens/matador-hi-school.glb",
+        source:
+          "/models/pens/:model(matador-hi-school|matador-smoothy|matador-all-time|matador-i-teen).glb",
         has: [{ type: "query", key: "v", value: "[a-f0-9]{12}" }],
         headers: [
           {

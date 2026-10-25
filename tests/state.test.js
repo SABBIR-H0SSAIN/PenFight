@@ -54,9 +54,10 @@ test("every mode defaults to Matador High School and preserves saved pen choices
   }
   const preferences = structuredClone(fresh.get().preferences);
   preferences.vs.pen = "gel";
-  preferences.train.pen = "premium";
-  preferences.ai.penA.pen = "heavy";
-  preferences.ai.penB.pen = "ball";
+  preferences.train.pen = "matador_smoothy";
+  preferences.ai.penA.pen = "matador_all_time";
+  preferences.ai.penB.pen = "matador_i_teen";
+  preferences.ai.penA.colors.matador_all_time = "#235bd1";
   preferences.pvp.pen1.pen = "matador_smoothy";
   preferences.pvp.pen2.pen = "gel";
   preferences.pvp.pen1.colors.matador_smoothy = "#123456";
@@ -66,8 +67,8 @@ test("every mode defaults to Matador High School and preserves saved pen choices
   assert.deepEqual(returning.get().preferences, preferences);
   for (const [mode, expected] of [
     ["vs", ["gel", "gel"]],
-    ["train", ["premium", "premium"]],
-    ["aivai", ["heavy", "ball"]],
+    ["train", ["matador_smoothy", "matador_smoothy"]],
+    ["aivai", ["matador_all_time", "matador_i_teen"]],
     ["pvp", ["matador_smoothy", "gel"]],
   ]) {
     const { settings, preferences } = returning.get();
@@ -77,6 +78,53 @@ test("every mode defaults to Matador High School and preserves saved pen choices
     );
   }
 });
+
+for (const removedPen of ["premium", "heavy"]) {
+  test(`saved ${removedPen} selections fall back safely in every mode`, (t) => {
+    const original = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "localStorage",
+    );
+    const selection = { pen: removedPen, colors: { [removedPen]: "#b8892b" } };
+    const saved = {
+      vs: selection,
+      train: selection,
+      ai: { penA: selection, penB: selection },
+      pvp: { pen1: selection, pen2: selection },
+    };
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (key) =>
+          key === "pfa.preferences" ? JSON.stringify(saved) : null,
+      },
+    });
+    t.after(() => {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else delete globalThis.localStorage;
+    });
+    const engine = createGameEngine();
+    assert.equal(Object.hasOwn(engine.PENS, removedPen), false);
+    const ui = createUiStore();
+    hydrateState(engine, ui);
+    const { settings, preferences } = ui.get();
+    for (const mode of ["vs", "train", "aivai", "pvp"]) {
+      const options = buildMatchOptions(engine, settings, preferences, mode);
+      assert.deepEqual(options.pens, ["matador_hs", "matador_hs"]);
+      assert.deepEqual(engine.newState(options.pens).surge, [false, false]);
+    }
+    for (const value of [
+      preferences.vs,
+      preferences.train,
+      preferences.ai.penA,
+      preferences.ai.penB,
+      preferences.pvp.pen1,
+      preferences.pvp.pen2,
+    ]) {
+      assert.equal(Object.hasOwn(value.colors, removedPen), false);
+    }
+  });
+}
 
 test("coercible arrays in saved pen, difficulty, algorithm and colour fields cannot break match startup", (t) => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
