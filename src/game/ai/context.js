@@ -4,8 +4,8 @@ export function createSearchContext(PF) {
   const { rng, now } = PF._internals;
   function mkCtx(cfg, me) {
     const ctx = {
-      rng: rng((cfg.seed || Date.now() & 0xffffff) + 17),
-      noise: cfg.noise || null,
+      rng: rng((cfg.seed ?? Date.now() & 0xffffff) + 17),
+      noise: cfg.noise?.a || cfg.noise?.p ? cfg.noise : null,
       sims: 0,
       evals: 0,
       nodes: 0,
@@ -45,10 +45,12 @@ export function createSearchContext(PF) {
   }
   function ev(state, me, act, ctx, samples) {
     ctx.evals++;
-    ctx.sims += samples;
+    const noise = samples > 1 ? ctx.noise : null;
+    const simulations = noise ? samples : 1;
+    ctx.sims += simulations;
     return PF.evalShot(state, me, act, {
-      samples,
-      noise: samples > 1 ? ctx.noise : null,
+      samples: simulations,
+      noise,
       rng: ctx.rng,
       wa: ctx.wa,
       wd: ctx.wd,

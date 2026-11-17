@@ -18,6 +18,7 @@ export function createBenchmarkRunner(PF, ui) {
       L = PF.LEVELS[level];
     const cfg = (algo) => ({
       algo,
+      level,
       noise: L.noise,
       mistake: L.mistake,
     });
@@ -34,14 +35,16 @@ export function createBenchmarkRunner(PF, ui) {
       },
     });
     for (let i = 0; i < N && id === token; i++) {
+      const roundMs = [0, 0],
+        roundDecisions = [0, 0];
       const gen = PF.playRound([cfg(A), cfg(B)], {
         seed: gameConfig.ai.benchmark.seed + i,
         first: i % 2,
         budgetScale: gameConfig.ai.benchmark.budgetScale,
         types: ["ball", "gel"],
         onDecision: (me, time) => {
-          ms[me] += time;
-          decisions[me]++;
+          roundMs[me] += time;
+          roundDecisions[me]++;
         },
       });
       let step;
@@ -73,6 +76,8 @@ export function createBenchmarkRunner(PF, ui) {
       const result = step.value;
       result.points.forEach((points, side) => {
         wins[side] += points;
+        ms[side] += roundMs[side];
+        decisions[side] += roundDecisions[side];
       });
       turns += result.turns;
       if (result.how === "out") outs++;

@@ -101,7 +101,7 @@ export function BenchmarkPanel() {
               </thead>
               <tbody>
                 <tr>
-                  <td>Rounds won</td>
+                  <td>Rounds scored</td>
                   {result.wins.map((wins, index) => (
                     <td key={index}>
                       {wins} · {Math.round((wins / result.done) * 100)}%
@@ -119,7 +119,7 @@ export function BenchmarkPanel() {
             <p className="mute">
               {result.done} / {result.total} rounds · avg{" "}
               {(result.turns / result.done).toFixed(1)} flicks · {result.outs}{" "}
-              knock-offs
+              rounds with a knock-off
             </p>
             <div className="prog">
               <i style={{ width: `${(result.done / result.total) * 100}%` }} />

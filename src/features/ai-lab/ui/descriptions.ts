@@ -6,7 +6,7 @@ export const ALGORITHM_INFO: Record<Algorithm, string> = {
     "A*-style budgeted search: orders action nodes by f = g + h. g measures shot effort and h estimates remaining cost from simulated shot quality. This physics heuristic is not admissible, so optimality is not guaranteed.",
   minimax:
     "Minimax: alternates MAX for the AI and MIN for its opponent. Chooses the shot with the best worst-case reply value within a depth-limited, discretized action tree and root shortlist.",
-  mcts: "Monte Carlo tree search: repeats UCB selection, expansion, random rollout and backpropagation. Uses a discretized action shortlist and bounded rollout depth to estimate shot values.",
+  mcts: "Monte Carlo tree search: repeats UCB selection, expansion, random rollout and backpropagation. Keeps a board state at each node so replies stay aimed correctly. Estimates shot values with a shortlist and bounded rollouts.",
   fuzzy:
     "Fuzzy logic: converts distance, risk and confidence into memberships, applies rules and defuzzifies flick power and attack/defend balance.",
 };

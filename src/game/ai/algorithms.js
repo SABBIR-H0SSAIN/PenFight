@@ -57,23 +57,25 @@ export function installAlgorithms(PF) {
     // human-like mistakes: sometimes settle for a runner-up
     let action = out.action,
       mistake = false;
-    if (
-      cfg.mistake &&
-      ctx.rng() < cfg.mistake &&
-      out.moves &&
-      out.moves.length > 2
-    ) {
-      const alt =
-        out.moves[
-          1 + Math.floor(ctx.rng() * Math.min(4, out.moves.length - 1))
-        ];
-      if (alt && alt.act) {
-        action = alt.act;
+    if (cfg.mistake && ctx.rng() < cfg.mistake) {
+      const alternatives = out.moves
+        .filter((move) => move.act.key !== action.key)
+        .slice(0, 4);
+      if (alternatives.length > 0) {
+        const alternative =
+          alternatives[Math.floor(ctx.rng() * alternatives.length)];
+        action = alternative.act;
         mistake = true;
+        if (algo === "minimax") {
+          ctx.live.extra.worstReply = alternative.reply?.label ?? null;
+        }
       }
     }
     ctx.live.stats = stats(ctx);
     ctx.live.selected = action;
+    for (const move of ctx.live.moves) {
+      move.selected = move.act.key === action.key;
+    }
     ctx.live.mistake = mistake;
     return { action, info: ctx.live };
   };

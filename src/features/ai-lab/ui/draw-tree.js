@@ -1,3 +1,12 @@
+export function selectedTreeNode(decision) {
+  const key = decision.selected?.key;
+  if (key == null) return undefined;
+  const isTurnTree = decision.algo === "minimax" || decision.algo === "mcts";
+  return decision.nodes.find(
+    (node) => node.actionKey === key && (!isTurnTree || node.d === 1),
+  );
+}
+
 function isDark() {
   const d = document.documentElement.dataset.theme;
   return (
@@ -11,9 +20,9 @@ export function drawTree(c, L) {
   const dpr = Math.min(2, devicePixelRatio || 1),
     w = c.clientWidth,
     h = c.clientHeight;
-  if (c.width !== w * dpr) {
-    c.width = w * dpr;
-    c.height = h * dpr;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
   }
   const g = c.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -41,19 +50,9 @@ export function drawTree(c, L) {
   });
   const selSet = new Set();
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const sel = L.selected && L.selected.label;
-  nodes.forEach((n) => {
-    if (
-      n.goal ||
-      (sel && n.d === 1 && (n.label === sel || sel.startsWith(n.label)))
-    ) {
-      let q = n;
-      while (q) {
-        selSet.add(q.id);
-        q = byId.get(q.p);
-      }
-    }
-  });
+  for (let node = selectedTreeNode(L); node; node = byId.get(node.p)) {
+    selSet.add(node.id);
+  }
   g.lineWidth = 1;
   nodes.forEach((n) => {
     if (n.p < 0) return;

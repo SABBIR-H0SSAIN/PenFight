@@ -4,6 +4,7 @@ export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
   function* minimaxAI(state, me, cfg, ctx) {
     cfg = { ...gameConfig.ai.budgets.minimax, ...cfg };
     const live = ctx.live;
+    const shotOptions = { maxT: gameConfig.physics.gameplaySimulationSeconds };
     const depth = Math.max(1, Math.floor(cfg.depth ?? 2));
     const beam = Math.max(1, Math.floor(cfg.beam ?? 8));
     const scored = [];
@@ -21,8 +22,9 @@ export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
         id: live.nodes.length,
         p: parent,
         d: level,
-        label: act.label.slice(0, 16),
-        order: 0,
+        label: act.label,
+        actionKey: act.key,
+        order: 1,
       };
       live.nodes.push(node);
       return node;
@@ -40,7 +42,7 @@ export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
       let value = maximizing ? -Infinity : Infinity,
         reply = null;
       for (const act of actions) {
-        const shot = PF.shoot(pens, who, act);
+        const shot = PF.shoot(pens, who, act, shotOptions);
         ctx.sims++;
         const node = addNode(parent, level, act);
         const child = yield* valueAfter(
@@ -61,7 +63,7 @@ export function createMinimaxStrategy({ PF, ev, topMoves, slice }) {
     }
     const moves = [];
     for (const candidate of candidates) {
-      const shot = PF.shoot(state.pens, me, candidate.act);
+      const shot = PF.shoot(state.pens, me, candidate.act, shotOptions);
       ctx.sims++;
       const node = addNode(0, 1, candidate.act);
       const result = yield* valueAfter(

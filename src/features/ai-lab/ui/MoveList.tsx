@@ -1,6 +1,12 @@
 "use client";
-import type { SuggestedMove } from "@/game/state/types";
-export function MoveList({ moves }: { moves: SuggestedMove[] }) {
+import type { Algorithm, SuggestedMove } from "@/game/state/types";
+export function MoveList({
+  moves,
+  algorithm,
+}: {
+  moves: SuggestedMove[];
+  algorithm?: Algorithm;
+}) {
   if (!moves.length)
     return (
       <p className="mute">No decision yet. Take a turn or wait for the AI.</p>
@@ -8,7 +14,10 @@ export function MoveList({ moves }: { moves: SuggestedMove[] }) {
   return (
     <div>
       {moves.map((move, index) => (
-        <div className={`mv${move.selected ? " sel" : ""}`} key={index}>
+        <div
+          className={`mv${move.selected ? " sel" : ""}`}
+          key={move.act.key ?? index}
+        >
           <span className="nm">Move {String.fromCharCode(65 + index)}</span>
           <span className="lb">{move.label}</span>
           <span className="bar">
@@ -18,9 +27,19 @@ export function MoveList({ moves }: { moves: SuggestedMove[] }) {
           </span>
           <b>{Math.round(move.score)}</b>
           <small>
-            {move.visits ? `${move.visits} visits · ` : ""}knock-out{" "}
-            {Math.round((move.prob || 0) * 100)}%
-            {move.risk ? ` · risk ${Math.round(move.risk * 100)}%` : ""}
+            {algorithm === "mcts" ? (
+              <>
+                {move.visits ?? 0} visits · mean reward{" "}
+                {(move.score / 100).toFixed(2)}
+              </>
+            ) : (
+              <>
+                {move.prob != null &&
+                  `Knock-off ${Math.round(move.prob * 100)}%`}
+                {move.risk != null &&
+                  ` · self knock-off ${Math.round(move.risk * 100)}%`}
+              </>
+            )}
           </small>
           {move.selected && <em>Selected</em>}
         </div>

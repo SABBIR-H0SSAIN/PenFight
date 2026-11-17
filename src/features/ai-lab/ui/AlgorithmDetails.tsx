@@ -26,6 +26,7 @@ interface Extra {
   expanded?: number;
   found?: boolean;
   open?: number;
+  finalRank?: number;
 }
 function MembershipBar({ label, value }: { label: string; value: number }) {
   return (
@@ -138,6 +139,14 @@ export function AlgorithmDetails({
         <>
           <h4>Informed search</h4>
           <p className="mute">Open list {x.open}</p>
+          {x.finalRank != null && !decision.mistake && (
+            <p>
+              Final shot rank: {x.finalRank.toFixed(2)}. Ranking adds 20 ×
+              knock-off rate, subtracts 30 × self knock-off rate
+              {decision.algo === "astar" && " and 14 × g"}, and gives qualifying
+              goal shots precedence.
+            </p>
+          )}
         </>
       )}
       {decision.mistake && (

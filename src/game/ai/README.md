@@ -18,11 +18,13 @@
 
 The search curriculum comes from the supplied Uninformed Search, Informed Search, Adversarial Search and MCTS slide decks. Fuzzy logic is included separately as requested.
 
-The shot-action tree has four levels: target, angle, power and spin. DFS tests complete shots for a knock-off goal, and returns the best evaluated shot or a fixed fallback if the goal is not reached within its budget. A configured depth below four reports a cutoff.
+The shot-action tree has four levels: target, angle, power and spin. DFS explores attack targets before table-centre and guard targets so the default budget reaches opponent shots. It tests complete shots for a knock-off goal and returns the best evaluated shot or a fixed fallback if the goal is not reached within its budget. A configured depth below four reports a cutoff.
 
 Bidirectional search was removed: it first simulated complete shots to discover winning leaves, then met forward/backward frontiers on their action prefixes. Those winning shots were already known, so the prefix traversal added work without finding a new solution. Friction, collisions and knock-offs do not provide a practical inverse physics transition, and the game has many possible winning end states rather than one known destination. Saved `bidirectional` selections use the existing obsolete-selection fallback.
 
-Greedy search orders by h; A* orders by g + h. The physics-based heuristic is not admissible, so this bounded A*-style search does not guarantee an optimal path. Minimax uses a root shortlist and depth limit to keep the continuous game's discretized action tree manageable. MCTS similarly uses a root shortlist and bounded rollout depth. Both operate without learned opponent probabilities.
+Greedy search orders by h; A* orders by g + h. The physics-based heuristic is not admissible, so this bounded A*-style search does not guarantee an optimal path. Minimax uses a root shortlist and depth limit to keep the continuous game's discretized action tree manageable. MCTS uses a scored root shortlist and bounded rollout depth. It stores the board reached by each tree edge so replies remain aimed from the positions where they were generated. The tree uses deterministic physics and random rollouts apply aim noise only when the selected difficulty supplies it. Both adversarial searches use a limited set of replies and neither guarantees an optimal shot.
+
+Fuzzy rules express the preference to attack or defend. Attack power accounts for travel to the opponent and follow-through after contact. Defensive power is capped by the distance to the guard position. Shot evaluation uses the same time limit and noise model as normal play, and repeats a simulation only when aim noise can change the result.
 
 Strategies receive engine/context helpers explicitly and return actions plus inspection data. Yield through `slice(ctx)` inside long searches, keep random seeds explicit in tests, and preserve the same knock-off rule in playable and headless matches. Per-player memory stores only confidence for fuzzy logic.
 

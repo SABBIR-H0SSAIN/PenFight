@@ -1,3 +1,5 @@
+import { gameConfig } from "../../config/config.ts";
+
 /** Score simulated shots without depending on presentation or browser APIs. */
 export function createShotEvaluator(PF) {
   const { clamp } = PF._internals;
@@ -9,10 +11,9 @@ export function createShotEvaluator(PF) {
       sE = 0,
       sG = 0;
     for (let i = 0; i < n; i++) {
-      const r = PF.shoot(state.pens, me, act, {
-        noise: o.noise,
-        rng: o.rng,
-        maxT: 3.6,
+      const action = PF.noisy(act, o.noise, o.rng);
+      const r = PF.shoot(state.pens, me, action, {
+        maxT: gameConfig.physics.gameplaySimulationSeconds,
       });
       if (r.out === 1 - me || r.out === 2) sS++;
       if (r.out === me || r.out === 2) sF++;

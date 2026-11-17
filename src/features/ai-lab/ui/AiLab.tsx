@@ -31,6 +31,7 @@ export function AiLab() {
   const [tab, setTab] = useState<keyof typeof tabs>("moves");
   const live = state.live,
     stats = live?.stats;
+  const explainedAlgorithm = live?.algo ?? state.labAlgo;
   return (
     <aside id="lab" hidden={!state.labOpen} aria-label="AI Lab">
       <div className="lh">
@@ -71,7 +72,6 @@ export function AiLab() {
           <span>Waiting for a decision</span>
         )}
       </div>
-      <div className="info">{ALGORITHM_INFO[state.labAlgo]}</div>
       <div className="tabs" role="tablist" aria-label="AI inspection">
         {(Object.keys(tabs) as (keyof typeof tabs)[]).map((key) => (
           <button
@@ -94,7 +94,7 @@ export function AiLab() {
       >
         {tab === "moves" && (
           <>
-            <MoveList moves={live?.moves || []} />
+            <MoveList moves={live?.moves || []} algorithm={live?.algo} />
             {state.mode === "train" && (
               <div id="hintBtns">
                 <button
@@ -117,7 +117,13 @@ export function AiLab() {
           </>
         )}
         {tab === "tree" && state.labOpen && <SearchTree decision={live} />}
-        {tab === "detail" && <AlgorithmDetails decision={live} />}
+        {tab === "detail" && (
+          <>
+            <h4>{ALGORITHMS[explainedAlgorithm]}</h4>
+            <p>{ALGORITHM_INFO[explainedAlgorithm]}</p>
+            <AlgorithmDetails decision={live} />
+          </>
+        )}
         {tab === "bench" && <BenchmarkPanel />}
       </div>
     </aside>

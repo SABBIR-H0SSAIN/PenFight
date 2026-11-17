@@ -118,13 +118,16 @@ export function createFuzzyStrategy({ PF, clamp, makeAction, ev, slice }) {
     const conf = ctx.mem ? ctx.mem.conf : 0.5;
     const fz = PF.fuzzy(dist, risk, conf);
     live.extra.fuzzy = { in: { dist, risk, conf }, ...fz };
-    const reach = PF.reachPower(s, dist - s.L / 2 - o.L / 2 + 6);
-    const atkPow = clamp(reach * (0.85 + 0.5 * fz.out.power), 0.2, 1);
+    // A short stroke that only reaches the barrel leaves little energy for
+    // the collision. Add follow-through distance using the inferred power.
+    const atkPow = clamp(PF.reachPower(s, dist + 30 * fz.out.power), 0.2, 1);
     const A = makeAction(state, me, 0, 1, 0, 1);
     A.pow = atkPow;
     A.label = "Attack: opp centre, P" + Math.round(atkPow * 100);
     const D = makeAction(state, me, 4, 1, 0, 1);
-    D.pow = clamp(0.25 + 0.2 * fz.out.power, 0.2, 0.5);
+    const [guardX, guardY] = PF.targetPoint(state, me, 4);
+    const guardPower = PF.reachPower(s, Math.hypot(guardX - s.x, guardY - s.y));
+    D.pow = clamp(Math.min(0.25 + 0.2 * fz.out.power, guardPower), 0.12, 0.5);
     D.label = "Defend: home guard, P" + Math.round(D.pow * 100);
     const rA = ev(state, me, A, ctx, 3),
       rD = ev(state, me, D, ctx, 3);
@@ -151,8 +154,24 @@ export function createFuzzyStrategy({ PF, clamp, makeAction, ev, slice }) {
     ];
     live.nodes.push(
       { id: 0, p: -1, d: 0, label: "fuzzy", order: 1 },
-      { id: 1, p: 0, d: 1, label: "Attack", v: sc.A, order: 2 },
-      { id: 2, p: 0, d: 1, label: "Defend", v: sc.D, order: 3 },
+      {
+        id: 1,
+        p: 0,
+        d: 1,
+        label: "Attack",
+        actionKey: A.key,
+        v: sc.A,
+        order: 2,
+      },
+      {
+        id: 2,
+        p: 0,
+        d: 1,
+        label: "Defend",
+        actionKey: D.key,
+        v: sc.D,
+        order: 3,
+      },
     );
     const act = sc.A >= sc.D ? A : D;
     live.selected = act;

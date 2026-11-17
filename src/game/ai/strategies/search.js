@@ -59,7 +59,7 @@ export function createSearchStrategy({
     const evaluated = [];
     let spent = 0;
     const K = 2.2;
-    heap.push(0, { id: 0, ch: [], g: 0, h: 50 });
+    heap.push(0, { id: 0, ch: [] });
     while (heap.size && spent < budget) {
       const n = heap.pop();
       order++;
@@ -81,8 +81,8 @@ export function createSearchStrategy({
         const g = nodeG(ch),
           hh = (1 - r.score / 100) * K,
           f = astar ? g + hh : hh;
-        const node = { id, ch, g, h: hh, r, act };
-        const isGoal = leaf && r.pSucc >= threshold && r.pSelf === 0;
+        const isGoal =
+          leaf && r.pSucc > 0 && r.pSucc >= threshold && r.pSelf === 0;
         live.nodes.push({
           id,
           p: n.id,
@@ -91,9 +91,13 @@ export function createSearchStrategy({
           v: r.score,
           order: 0,
           goal: isGoal,
+          actionKey: leaf ? act.key : undefined,
+          g,
+          h: hh,
+          f,
         });
+        heap.push(f, { id, ch });
         id++;
-        heap.push(f, node);
         if (leaf) evaluated.push({ act, ...r, g, isGoal });
       }
       live.moves = movesFrom(evaluated, null);
@@ -128,6 +132,7 @@ export function createSearchStrategy({
     live.extra.goalThreshold = threshold;
     live.extra.evaluated = evaluated.length;
     live.extra.budget = budget;
+    live.extra.finalRank = rank(best);
     return { action: best.act, moves: live.moves };
   }
   return { informed };

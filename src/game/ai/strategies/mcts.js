@@ -7,6 +7,7 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       N = cfg.iters,
       C = cfg.c,
       maxD = cfg.depth;
+    const shotOptions = { maxT: gameConfig.physics.gameplaySimulationSeconds };
     // root prior: best K actions by deterministic heuristic
     const all = PF.allActions(state, me),
       scored = [];
@@ -18,6 +19,8 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
     const rootActs = topMoves(scored, cfg.rootK).map((m) => m.act);
     const root = {
       mover: 1 - me,
+      pens: state.pens,
+      terminal: false,
       N: 0,
       W: 0,
       kids: [],
@@ -27,8 +30,8 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       d: 0,
     };
     live.nodes.push({ id: 0, p: -1, d: 0, label: "root", order: 0, n: 0 });
+    const visible = [root];
     let nid = 1;
-    const nz = ctx.noise || { a: 0.02, p: 0.04 };
     function actsFor(st, who) {
       return PF.quickActions(
         {
@@ -42,92 +45,79 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       );
     }
     for (let it = 0; it < N; it++) {
-      let node = root,
-        P = state.pens,
-        who = me,
-        depth = 0,
-        term = false;
+      let node = root;
       const path = [root];
-      // selection
-      while (!node.untried.length && node.kids.length && depth < maxD) {
+      // An action is aimed from its parent position. Reuse the actual position
+      // that produced it rather than replaying prior shots with fresh noise.
+      while (!node.untried.length && node.kids.length) {
+        const explore = C * Math.sqrt(Math.log(node.N + 1));
         let best = null,
-          bv = -1;
-        for (const k of node.kids) {
-          const u = k.W / k.N + C * Math.sqrt(Math.log(node.N + 1) / k.N);
-          if (u > bv) {
-            bv = u;
-            best = k;
+          value = -Infinity;
+        for (const child of node.kids) {
+          const ucb = child.W / child.N + explore / Math.sqrt(child.N);
+          if (ucb > value) {
+            value = ucb;
+            best = child;
           }
         }
-        const r = PF.shoot(P, who, best.act, {
-          noise: nz,
-          rng: ctx.rng,
-          maxT: 3.6,
-        });
-        ctx.sims++;
-        P = r.pens;
-        who = 1 - who;
         node = best;
-        depth++;
         path.push(node);
-        if (P[0].out || P[1].out) {
-          term = true;
-          break;
-        }
       }
-      // expansion
-      if (!term && depth < maxD && node.untried.length) {
-        const idx = Math.floor(ctx.rng() * node.untried.length);
+      if (node.untried.length) {
+        // Expand the strongest root priors first so small iteration budgets
+        // still try the best simulated candidates.
+        const idx =
+          node === root ? 0 : Math.floor(ctx.rng() * node.untried.length);
         const act = node.untried.splice(idx, 1)[0];
-        const r = PF.shoot(P, who, act, { noise: nz, rng: ctx.rng, maxT: 3.6 });
+        const mover = 1 - node.mover;
+        const { pens } = PF.shoot(node.pens, mover, act, shotOptions);
         ctx.sims++;
+        const terminal = pens[0].out || pens[1].out;
+        const depth = node.d + 1;
         const kid = {
-          mover: who,
+          mover,
           act,
+          pens,
+          terminal,
           N: 0,
           W: 0,
           kids: [],
-          untried: null,
+          untried: terminal || depth >= maxD ? [] : actsFor(pens, 1 - mover),
           parent: node,
           id: nid++,
-          d: depth + 1,
+          d: depth,
         };
-        P = r.pens;
-        who = 1 - who;
-        depth++;
-        kid.untried =
-          P[0].out || P[1].out || depth >= maxD ? [] : actsFor(P, who);
         node.kids.push(kid);
         node = kid;
         path.push(node);
         ctx.nodes++;
-        if (P[0].out || P[1].out) term = true;
-        if (live.nodes.length < cfg.maxVisibleNodes)
+        if (live.nodes.length < cfg.maxVisibleNodes) {
+          visible.push(kid);
           live.nodes.push({
             id: kid.id,
             p: kid.parent.id,
             d: kid.d,
-            label: act.label.length > 16 ? act.label.slice(0, 16) : act.label,
-            order: it,
+            label: act.label,
+            actionKey: act.key,
+            order: it + 1,
             n: 0,
           });
+        }
       }
-      // Roll out extra moves beyond the selected/expanded tree node.
-      let steps = 0;
-      while (
-        !term &&
-        steps < cfg.rolloutDepth &&
-        depth < maxD + cfg.rolloutDepth
-      ) {
-        const as = actsFor(P, who);
-        const a = as[Math.floor(ctx.rng() * as.length)];
-        const r = PF.shoot(P, who, a, { noise: nz, rng: ctx.rng, maxT: 3.6 });
+      // Rollouts generate each move from the board produced by the previous
+      // shot. Aim noise is sampled here only when difficulty calls for it.
+      let P = node.pens,
+        who = 1 - node.mover,
+        terminal = node.terminal;
+      for (let step = 0; !terminal && step < cfg.rolloutDepth; step++) {
+        const actions = actsFor(P, who);
+        if (!actions.length) break;
+        const act = actions[Math.floor(ctx.rng() * actions.length)];
+        const fired = ctx.noise ? PF.noisy(act, ctx.noise, ctx.rng) : act;
+        P = PF.shoot(P, who, fired, shotOptions).pens;
         ctx.sims++;
-        P = r.pens;
         who = 1 - who;
-        depth++;
-        steps++;
-        if (P[0].out || P[1].out) term = true;
+        terminal = P[0].out || P[1].out;
       }
       const reward = PF.E(P, me, ctx);
       for (const n of path) {
@@ -136,7 +126,7 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       }
       if ((it & 15) === 0) {
         live.stats = stats(ctx);
-        live.extra.iter = it;
+        live.extra.iter = root.N;
         fillMcts();
         yield* slice(ctx);
       }
@@ -147,25 +137,17 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
         .map((k) => ({
           label: k.act.label,
           score: (k.W / k.N) * 100,
-          prob: k.W / k.N,
           visits: k.N,
           act: k.act,
-          hit: 0,
-          risk: 0,
         }))
         .sort((a, b) => b.visits - a.visits)
         .slice(0, 8);
-      for (const k of root.kids) {
-        const n = live.nodes[k.id];
-        if (n) {
-          n.n = k.N;
-          n.v = (k.W / k.N) * 100;
-        }
-      }
-      for (let i = 1; i < live.nodes.length; i++) {
-        const nn = live.nodes[i];
-        nn.v = nn.v;
-      }
+      visible.forEach((node, index) => {
+        const view = live.nodes[index];
+        view.n = node.N;
+        view.reward = node.W;
+        if (index > 0) view.v = (node.W / node.N) * 100;
+      });
       live.extra.total = total;
     }
     fillMcts();
@@ -184,7 +166,6 @@ export function createMctsStrategy({ PF, ev, topMoves, slice, stats }) {
       live.moves.unshift({
         label: selAct.label,
         score: bestK ? (bestK.W / bestK.N) * 100 : 50,
-        prob: bestK ? bestK.W / bestK.N : 0.5,
         visits: bestK ? bestK.N : 0,
         act: selAct,
         selected: true,

@@ -6,10 +6,10 @@ export function installHeadlessMatches(PF) {
   /* ================================================= headless match helpers */
   PF.playRound = function* (cfgs, opts) {
     opts = opts || {};
-    const r = rng(opts.seed || 1234);
+    const r = rng(opts.seed ?? 1234);
     const types = opts.types || ["ball", "gel"];
     const state = PF.newState(types, r, opts.first || 0);
-    const mem = [PF.newMemory("advanced"), PF.newMemory("advanced")];
+    const mem = cfgs.map((cfg) => PF.newMemory(cfg.level ?? "advanced"));
     let turns = 0;
     // Exactly the same win condition as the playable game: knock a pen off.
     // There is deliberately NO maximum number of flicks and NO centre tiebreak.
@@ -17,7 +17,7 @@ export function installHeadlessMatches(PF) {
       const me = state.turn,
         cfg = Object.assign({}, cfgs[me], {
           mem: mem[me],
-          seed: (opts.seed || 1) * 31 + turns,
+          seed: (opts.seed ?? 1234) * 31 + turns,
           budgetScale: opts.budgetScale,
         });
       const t0 = now();

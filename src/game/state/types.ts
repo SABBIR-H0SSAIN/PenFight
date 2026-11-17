@@ -56,6 +56,11 @@ export interface SearchNode {
   d: number;
   label: string;
   goal?: boolean;
+  actionKey?: string;
+  g?: number;
+  h?: number;
+  f?: number;
+  reward?: number;
   order?: number;
   n?: number;
   v?: number;

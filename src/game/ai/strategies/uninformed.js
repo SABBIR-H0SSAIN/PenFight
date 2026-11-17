@@ -40,7 +40,7 @@ export function createUninformedStrategy({
   }
   const threshold = (cfg) => clamp(cfg.goal ?? 0.5, 0, 1);
   const isGoal = (result, cfg) =>
-    result.pSucc >= threshold(cfg) && result.pSelf === 0;
+    result.pSucc > 0 && result.pSucc >= threshold(cfg) && result.pSelf === 0;
   function finish(state, me, ctx, evaluated, found) {
     let best = found || topMoves(evaluated, 1)[0];
     if (!best) {
@@ -72,6 +72,7 @@ export function createUninformedStrategy({
         const result = { act, ...ev(state, me, act, ctx, 2) };
         evaluated.push(result);
         live.nodes[node.id].v = result.score;
+        live.nodes[node.id].actionKey = act.key;
         if (isGoal(result, cfg)) {
           found = result;
           live.nodes[node.id].goal = true;
@@ -81,7 +82,10 @@ export function createUninformedStrategy({
       } else {
         expanded++;
         for (let i = 0; i < LV[depth]; i++) {
-          const choices = node.choices.concat(i);
+          // LIFO visits attacking targets before centre and guard. Within an
+          // attack, try stronger power levels first.
+          const choice = depth === 0 ? LV[depth] - 1 - i : i;
+          const choices = node.choices.concat(choice);
           const id = live.nodes.length;
           live.nodes.push({
             id,
