@@ -1,6 +1,6 @@
 # Documentation
 
-Start with the [project README](../README.md) for setup, controls, game modes, AI Lab, and troubleshooting. Use [Contributing](../CONTRIBUTING.md) for development conventions and extension steps.
+Agents should start with [AGENTS.md](../AGENTS.md) for ownership and verification shortcuts. Start with the [project README](../README.md) for setup, controls, game modes, AI Lab, and troubleshooting. Use [Contributing](../CONTRIBUTING.md) for development conventions and extension steps.
 
 ## Maintained guides
 

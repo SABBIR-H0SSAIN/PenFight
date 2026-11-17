@@ -6,6 +6,5 @@ coverage/
 .DS_Store
 .env*
 !.env.example
-AGENTS.md
 .vercel
 output/

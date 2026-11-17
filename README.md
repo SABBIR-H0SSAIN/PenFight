@@ -13,11 +13,11 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/NEXT.JS-16.4-111827?style=for-the-badge&amp;logo=nextdotjs&amp;logoColor=white" alt="Next.js 16.4" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/REACT-19.3-087EA4?style=for-the-badge&amp;logo=react&amp;logoColor=white" alt="React 19.3" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/TYPESCRIPT-5.9-3178C6?style=for-the-badge&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/THREE.JS-0.128-7C3AED?style=for-the-badge&amp;logo=threedotjs&amp;logoColor=white" alt="Three.js 0.128" /></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/NODE.JS-22.18%2B-339933?style=for-the-badge&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 22.18 or newer" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/Next.js-16.4-111827?style=flat&amp;logo=nextdotjs&amp;logoColor=white" alt="Next.js 16.4" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/React-19.3-087EA4?style=flat&amp;logo=react&amp;logoColor=white" alt="React 19.3" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5.9" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/Three.js-0.128-7C3AED?style=flat&amp;logo=threedotjs&amp;logoColor=white" alt="Three.js 0.128" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/Node.js-22.18%2B-339933?style=flat&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 22.18 or newer" /></a>
 </p>
 
 <p align="center">
@@ -34,8 +34,7 @@ Aim, flick, and knock your opponent's pen off the desk. Each turn is a small tes
 
 Play with a friend, challenge an AI opponent, or watch two algorithms face off. In Practice Lab, explore the AI's candidate shots and search tree, then request a hint for your own move.
 
-<details>
-<summary><strong>Explore the README</strong></summary>
+**Explore the README**
 
 - [Features](#features)
 - [Game modes](#game-modes)
@@ -48,8 +47,6 @@ Play with a friend, challenge an AI opponent, or watch two algorithms face off. 
 - [Configuration](#configuration)
 - [Project structure](#project-structure)
 - [Development checks](#development-checks)
-
-</details>
 
 ## Features
 
@@ -64,12 +61,12 @@ Play with a friend, challenge an AI opponent, or watch two algorithms face off. 
 
 ## Game modes
 
-| Mode                | Description                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------- |
-| **Two Players**     | Local pass-and-play matches with separate pen selections and player names.              |
-| **Play vs AI**      | Challenge beginner, advanced, or expert opponents.                                      |
-| **AI vs AI Battle** | Pick each opponent's algorithm and pen, then watch at 1×, 2×, or 4× speed. |
-| **Practice Lab**    | Choose an opponent algorithm, keep the inspector open, and request hints on your turn.  |
+| Mode                | Description                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| **Two Players**     | Local pass-and-play matches with separate pen selections and player names.             |
+| **Play vs AI**      | Challenge beginner, advanced, or expert opponents.                                     |
+| **AI vs AI Battle** | Pick each opponent's algorithm and pen, then watch at 1×, 2×, or 4× speed.             |
+| **Practice Lab**    | Choose an opponent algorithm, keep the inspector open, and request hints on your turn. |
 
 ### How to play
 

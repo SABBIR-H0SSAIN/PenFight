@@ -1,5 +1,24 @@
 name: Game checks
-on: [push, pull_request]
+on:
+  push:
+    branches: ['**']
+    paths: &game-check-paths
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - 'next.config.ts'
+      - 'next-env.d.ts'
+      - 'tsconfig.json'
+      - 'eslint.config.mjs'
+      - '.github/workflows/ci.yml'
+      - '!**/*.md'
+      - '!**/*.mdx'
+  pull_request:
+    paths: *game-check-paths
 permissions:
   contents: read
 jobs:

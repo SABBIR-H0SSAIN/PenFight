@@ -2,6 +2,8 @@
 
 ## Before making changes
 
+Start with [AGENTS.md](AGENTS.md) for repository rules and test selection.
+
 1. Install the locked dependencies with `npm ci` and start `npm run dev`.
 2. Choose one feature or algorithm per branch/task. If using Git, create short-lived feature branches from the main branch.
 3. Read the feature README, `docs/architecture.md`, and `docs/testing.md`. For Next.js changes, read the relevant installed guide under `node_modules/next/dist/docs/` as required by `AGENTS.md`. Put implementation beside the feature that owns it.
