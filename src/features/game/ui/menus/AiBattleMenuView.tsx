@@ -56,14 +56,14 @@ export function AiBattleMenuView() {
         </section>
       </div>
       <label className="f">
-        Speed
+        Shot playback speed
         <select
           value={value.speed}
           onChange={(event) => update({ speed: Number(event.target.value) })}
         >
           {CONFIG_LIMITS.speeds.map((speed) => (
             <option key={speed} value={speed}>
-              x{speed}
+              {speed}×
             </option>
           ))}
         </select>

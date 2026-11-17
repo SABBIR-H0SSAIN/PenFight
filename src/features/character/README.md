@@ -14,6 +14,8 @@ Student chairs use the shared matte bench materials in `src/features/furniture`.
 
 Reaching limits forward chair motion using the actual torso and clothing outline at desk height. The final check includes breathing, sway and reaction poses; a deep lean can move the seat slightly backward. Cross-body shots can shift the seat sideways while keeping the arms attached and their bone lengths fixed. The hand-motion suite checks torso mesh triangles against the desktop for both players at 20/60/120 fps, including reaching, reactions and resets.
 
+The non-playing hand follows the seat position and holds its resting palm orientation through thinking and reach. The controller caps animation speed independently from recorded shots in AI Battle.
+
 ## Real hand animation audit
 
 Run `npm run test:hand-motion` to exercise the actual character rig and meshes. The audit covers 1,620 contact poses, 720 camera projections per pose, 144 human flicks, 24 AI direction checks and 24 AI speed/frame-rate checks, both players, 20/30/60/120 fps, reactions and cancellation. `begin()` cancels only the selected hand's old tweens. Contact reach adapts wrist orientation without extending bones; resting fingers/thumb and victory transitions are smoothed to avoid desk penetration and pose snaps.

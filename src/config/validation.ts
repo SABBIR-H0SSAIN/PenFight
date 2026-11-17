@@ -55,6 +55,7 @@ export const configRules: ConfigRules = {
     "physics.*Seconds": [1, 10],
     "playback.recordInterval": [1 / 120, 1 / 30],
     "playback.impactSpeed": [0.1, 1],
+    "playback.battleAnimationSpeedLimit": [1, 4],
     "playback.*": [0, 2],
     "ai.sliceMs": [1, 16],
     "ai.budgets.*.goal": [0, 1],

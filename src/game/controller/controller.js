@@ -82,6 +82,7 @@ export function createController({
   };
   const playRng = PF.rng(Date.now() & 0xffff);
   let clock = 0,
+    ambientClock = 0,
     last = performance.now();
 
   /* ---------------------------------------------------------------- world */
@@ -423,7 +424,7 @@ export function createController({
         .filter((event) => event.t >= range.start)
         .sort((a, b) => a.t - b.t);
       const impact =
-        opts.slow !== false && SET.slowmo && !opts.replay
+        SET.slowmo && G.mode !== "aivai" && !opts.replay
           ? events.find((e) => e.type === "hit" && e.speed > 90)?.t
           : null;
       G.play = {
@@ -436,6 +437,7 @@ export function createController({
         impact,
         speed: opts.speed || 1,
         replay: !!opts.replay,
+        shotCue: !!opts.shotCue,
         onEnd: (c) => {
           Snd.stopMotion();
           G.play = null;
@@ -453,8 +455,20 @@ export function createController({
   function updatePlay(dt) {
     const P = G.play;
     if (!P) return;
+    if (P.skip) {
+      World.clearTrails();
+      P.onEnd(false);
+      showStatic();
+      return;
+    }
     const sp = impactPlaybackRate(P.t, P.impact, P.speed);
-    P.t = Math.min(P.dur, P.t + dt * sp);
+    const nextTime = P.t + dt * sp;
+    const finished = nextTime >= P.dur - 1e-6;
+    P.t = finished ? P.dur : nextTime;
+    if (P.shotCue && (P.t >= 0.16 || P.t >= P.dur)) {
+      P.shotCue = false;
+      World.showAim(0, 0, 0, 0, false);
+    }
     const fr = interpolateRecording(P.rec, P.t);
     if (!fr) return;
     G.curFrame = fr;
@@ -483,15 +497,20 @@ export function createController({
         pan: soundPan(pen.x, pen.y),
       })),
     );
-    for (let i = 0; i < 2; i++) {
-      const s = fr.p[i];
-      World.setPen(i, s, P.t);
-      World.pushTrail(i, s.x, s.y, Math.hypot(s.vx, s.vy));
+    for (const [i, pen] of fr.p.entries()) {
+      World.setPen(
+        i,
+        finished && pen.out ? { ...pen, hidden: true } : pen,
+        P.t,
+      );
+      if (pen.out) World.clearTrail(i);
+      else World.pushTrail(i, pen.x, pen.y, Math.hypot(pen.vx, pen.vy));
     }
-    if (P.t >= P.dur - 1e-6) {
+    if (finished) {
       World.clearTrails();
-      const cb = P.onEnd;
-      cb?.(false);
+      P.onEnd(false);
+      // A cropped replay can end before the final pose of the surviving pen.
+      if (P.replay) showStatic();
     }
   }
 
@@ -562,34 +581,21 @@ export function createController({
       S.thinking = false;
       S.goal = null;
       const a = handAngle(S.hand.ang, S.fa, act.ang),
-        id = S.begin("r");
+        id = S.begin("r"),
+        windup = at(1.8 + act.pow * 4.5);
       const ok = await S.run(
         "r",
         [
           ...(handFar(S) ? S.liftStages("r") : []),
-          [
-            Object.assign({ ty: 8, curl: 0.38, ang: a }, at(2.4)),
-            0.25,
-            "reach",
-          ],
-          [Object.assign({ ty: height, curl: 0.55 }, at(0)), 0.14],
+          [{ ...windup, ty: 8, curl: 0.38, ang: a }, 0.23, "reach"],
+          [{ ...windup, ty: height + 0.12, curl: 0.94 }, 0.12],
         ],
         id,
       );
       chk(tok);
       if (!ok) return;
-      await waitForTouch(S, contact, height, tok, 0.16);
+      // Reach directly to the wind-up position before moving into contact.
       Snd.tick();
-      // Draw the fingertip back along the actual release vector, not through
-      // the barrel, before driving it forward again to the physical contact.
-      await S.to(
-        Object.assign(
-          { curl: 0.94, ty: height + 0.12 },
-          at(1.8 + act.pow * 4.5),
-        ),
-        0.1 + act.pow * 0.08,
-      );
-      chk(tok);
     } else {
       if (S.grabP) await S.grabP;
       chk(tok);
@@ -615,7 +621,7 @@ export function createController({
       "contact",
     );
     chk(tok);
-    await waitForTouch(S, contact, height, tok);
+    return waitForTouch(S, contact, height, tok);
   }
   /* pull the playing hand back to the lap right away, so it is never over the table while the pen slides */
   function retract(i) {
@@ -631,7 +637,14 @@ export function createController({
   async function executeShot(who, act, contact, fromPull) {
     const tok = G.token,
       st = G.state;
-    await flickAnim(who, act, contact, fromPull);
+    const touched = await flickAnim(who, act, contact, fromPull);
+    chk(tok);
+    if (!touched) {
+      // A seated character cannot cover the whole desk. Show an abstract
+      // shot cue at the real contact point while the hand retracts.
+      retract(who);
+      World.showAim(contact.x, contact.y, act.ang, act.pow, true);
+    }
     chk(tok);
     Snd.flick(act.pow, {
       pen: G.pens[who],
@@ -649,12 +662,16 @@ export function createController({
     movingHand.goal = null;
     movingHand.grabP = null;
     movingHand.contactTarget = null;
-    movingHand.to({ ty: movingHand.hand.ty + 5, curl: 0.27 }, 0.11).then(() => {
-      if (!disposed && G.token === followToken) retract(who);
-    });
+    if (touched) {
+      movingHand
+        .to({ ty: movingHand.hand.ty + 5, curl: 0.27 }, 0.11)
+        .then(() => {
+          if (!disposed && G.token === followToken) retract(who);
+        });
+    }
     G.lastRes = { res, who, act };
     G.camMode = SET.follow ? "follow" : "game";
-    await startPlay(res, who);
+    await startPlay(res, who, { shotCue: !touched });
     chk(tok);
     if (G.camMode === "follow") G.camMode = "game";
     return res;
@@ -1118,7 +1135,7 @@ export function createController({
     setThink(who, cfg);
     World.showHints(null);
     const gen = PF.decide(G.state, who, cfg),
-      t0 = performance.now();
+      started = clock;
     let r;
     for (;;) {
       r = gen.next();
@@ -1134,8 +1151,14 @@ export function createController({
       }
       chk(tok);
     }
-    const need = (cfg.think ?? 800) / G.speed - (performance.now() - t0);
-    if (need > 0) await wait(need / 1000);
+    const configuredThink = (cfg.think ?? 800) / 1000;
+    const minimumThink =
+      G.mode === "aivai"
+        ? Math.min(configuredThink, gameConfig.playback.battleThinkLimit)
+        : configuredThink;
+    // Both elapsed time and remaining time use the same unpaused clock.
+    const remaining = minimumThink - (clock - started);
+    if (remaining > 0) await wait(remaining);
     S.thinking = false;
     S.setEmotion("neutral", 0);
     ui.set({ thinking: null });
@@ -1175,10 +1198,10 @@ export function createController({
   function showStatic() {
     if (!G.state || G.play) return;
     const t = G.state.pens;
-    for (let i = 0; i < 2; i++)
+    for (const [i, pen] of t.entries())
       World.setPen(
         i,
-        Object.assign({ z: 0 }, t[i]),
+        { z: 0, ...pen, hidden: pen.out },
         0,
         G.spawn == null ? 1 : G.spawn,
       );
@@ -1238,7 +1261,7 @@ export function createController({
           : G.names[G.state.turn] + " flicks first",
       1400,
     );
-    await wait(0.6);
+    await wait(G.mode === "aivai" ? gameConfig.playback.battleRoundIntro : 0.6);
     // no flick limit: the round continues until a pen leaves the desk
     for (;;) {
       const st = G.state,
@@ -1278,7 +1301,9 @@ export function createController({
       updateHud();
       const outcome = roundOutcome(res.out);
       if (outcome) return { ...outcome, res, who };
-      await wait(0.16);
+      await wait(
+        G.mode === "aivai" ? gameConfig.playback.battleBetweenShots : 0.16,
+      );
     }
   }
   async function replayShot() {
@@ -1302,7 +1327,6 @@ export function createController({
     const done = startPlay(R.res, R.who, {
       speed: sp,
       replay: true,
-      slow: false,
     });
     const tick = scope.interval(() => {
       C.t += 0.05;
@@ -1353,7 +1377,7 @@ export function createController({
       students[1 - win].setEmotion("frustrated", 2.6);
     };
     ui.set({ turn: { label: "", who: 0 } });
-    if (r.how === "out" && SET.replay && G.lastRes && G.speed <= 1) {
+    if (r.how === "out" && SET.replay && G.lastRes && G.mode !== "aivai") {
       showBanner(null);
       await wait(0.1);
       await replayShot();
@@ -1367,7 +1391,9 @@ export function createController({
       await wait(0.35);
     } else {
       reactions();
-      await wait(0.95);
+      await wait(
+        G.mode === "aivai" ? gameConfig.playback.battleRoundEnd : 0.95,
+      );
     }
     G.camMode = "game";
     chk(tok);
@@ -1716,7 +1742,8 @@ export function createController({
   function frame(ts) {
     if (disposed) return;
     scope.frame(frame);
-    let dt = Math.min(DTMAX, (ts - last) / 1000);
+    const elapsed = Math.max(0, (ts - last) / 1000),
+      dt = Math.min(DTMAX, elapsed);
     last = ts;
     // A menu turn needs the compositor; keep the last WebGL frame until it ends.
     // Advance the timestamp so the scene resumes without a catch-up jump.
@@ -1748,21 +1775,25 @@ export function createController({
       World.render();
       return;
     }
-    const ds = dt * (G.mode === "aivai" ? G.speed : 1);
-    clock += ds;
+    const speed = G.mode === "aivai" ? G.speed : 1;
+    const animationStep =
+      dt * Math.min(speed, gameConfig.playback.battleAnimationSpeedLimit);
+    const playbackStep = Math.min(Math.max(DTMAX, 0.1), elapsed) * speed;
+    clock += animationStep;
+    ambientClock += dt;
     for (let i = G.timers.length - 1; i >= 0; i--) {
       const t = G.timers[i];
-      t.t -= ds;
+      t.t -= animationStep;
       if (t.t <= 0) {
         G.timers.splice(i, 1);
         t.res();
       }
     }
-    World.ambient(ds, clock);
-    updatePlay(ds);
-    if (!G.play) {
-      showStatic();
-    }
+    World.ambient(dt, ambientClock);
+    // The final playback frame must survive until the match loop receives
+    // the shot result. Its pre-shot board is still current in this frame.
+    if (G.play) updatePlay(playbackStep);
+    else showStatic();
     const hp = students.map((s) => s.head.getWorldPosition(new V3()));
     students.forEach((s, i) => {
       s.look.copy(
@@ -1772,7 +1803,7 @@ export function createController({
             ? penWorld(G.play.who)
             : hp[1 - i],
       );
-      s.update(ds, clock);
+      s.update(animationStep, clock);
     });
     if (G.mode === "train" && G.hint && G.input) {
       /* keep hint arrows */
@@ -1816,8 +1847,7 @@ export function createController({
     },
     skipReplay() {
       if (G.play?.replay) {
-        G.play.t = G.play.dur;
-        G.play.ei = G.play.events.length;
+        G.play.skip = true;
         Snd.stopMotion();
       }
     },

@@ -90,12 +90,12 @@ export const pensConfig = {
 export const penColorsConfig = {
   matador_i_teen: {
     default: "#f3445f",
-    label: "Barrel colour",
+    label: "Pen colour",
     swatches: ["#f3445f", "#235bd1", "#148267", "#7043a8"],
   },
   matador_all_time: {
     default: "#b65646",
-    label: "End colour",
+    label: "Pen colour",
     swatches: [
       "#b65646",
       "#235bd1",
@@ -107,7 +107,7 @@ export const penColorsConfig = {
   },
   matador_hs: {
     default: "#00e35b",
-    label: "Barrel colour",
+    label: "Pen colour",
     swatches: ["#00e35b", "#ef4d33", "#efd64b", "#5a41b8", "#a8dc7f"],
   },
   matador_smoothy: {

@@ -273,3 +273,60 @@ test("a shared round below the goal advances play and preserves a later outright
   assert.match(f.ui.get().end.title, /wins the series/);
   assert.equal(f.ui.get().end.title, `${f.ui.get().names[0]} wins the series`);
 });
+
+for (const replay of ["off", "finish", "skip"]) {
+  test(`a landed pen never flashes back onto the desk, replay=${replay}`, async (t) => {
+    const f = controllerFixture(t, { stepMs: 1000 / 60, seed: 42 });
+    f.ui.set({
+      settings: { ...f.ui.get().settings, replay: replay !== "off" },
+      preferences: {
+        ...f.ui.get().preferences,
+        pvp: { ...f.ui.get().preferences.pvp, goal: 1 },
+      },
+    });
+    const shoot = f.engine.shoot;
+    f.engine.shoot = (pens, who, _act, opts) => {
+      const start = fallingPens(pens, [0]);
+      start[0].x = 59;
+      return shoot(start, who, noFlick, opts);
+    };
+    const seen = { live: [], replay: [], settled: [] };
+    f.world.render = () => {
+      const ui = f.ui.get();
+      const bucket = ui.replaying
+        ? "replay"
+        : ui.scores[1]
+          ? "settled"
+          : "live";
+      const pen = f.pens[0];
+      seen[bucket].push({ out: pen.out, hidden: pen.hidden || pen.landed });
+    };
+    f.controller.start("pvp");
+    await f.advance(110);
+    const point = f.point();
+    f.pointer("pointerdown", point);
+    f.pointer("pointerup", { x: point.x + 600, y: point.y });
+    for (let frame = 0; frame < 400 && !f.ui.get().end; frame++) {
+      await f.advance();
+      if (replay === "skip" && f.ui.get().replaying) f.controller.skipReplay();
+    }
+    assert.ok(f.ui.get().end);
+    const firstOut = seen.live.findIndex((frame) => frame.out);
+    assert.ok(firstOut >= 0, "the referee must see the visible fall");
+    assert.ok(
+      seen.live.slice(firstOut).every((frame) => frame.out),
+      "the frame that finishes live playback must never draw the pre-shot board",
+    );
+    assert.ok(seen.live.some((frame) => frame.out && !frame.hidden));
+    assert.ok(seen.live.at(-1).hidden);
+    assert.ok(seen.settled.every((frame) => frame.out && frame.hidden));
+    if (replay !== "off") {
+      assert.ok(seen.replay.length);
+      assert.ok(seen.replay.at(-1).hidden);
+    }
+    assert.equal(f.pens[1].out, false);
+    f.controller.start("pvp");
+    await f.advance(40);
+    assert.ok(f.pens.every((pen) => !pen.out && !pen.hidden));
+  });
+}

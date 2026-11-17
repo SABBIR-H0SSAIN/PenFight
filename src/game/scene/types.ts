@@ -12,10 +12,11 @@ import type { createCharacterFeature } from "@/features/character/scene/characte
 export type CharacterModel = ReturnType<
   ReturnType<typeof createCharacterFeature>["makeStudent"]
 >;
+export type PenRenderState = PenState & { hidden?: boolean };
 export interface PenHandle {
   group: Object3D;
   setType(type: PenKind, color?: string | null): void;
-  setState(state: PenState, time: number, scale?: number): void;
+  setState(state: PenRenderState, time: number, scale?: number): void;
 }
 export interface SceneWorld {
   registerPen(slot: number, pen: PenHandle): void;

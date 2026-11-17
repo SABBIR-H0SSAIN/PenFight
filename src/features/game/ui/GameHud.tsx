@@ -46,9 +46,9 @@ export function GameHud() {
       <div className="tools" role="toolbar" aria-label="Game controls">
         {state.mode === "aivai" && (
           <label id="speedBox">
-            <span className="sr-only">Simulation speed</span>
+            <span className="sr-only">Shot playback speed</span>
             <select
-              aria-label="Simulation speed"
+              aria-label="Shot playback speed"
               value={state.speed}
               onChange={(event) =>
                 services.controller?.setSpeed(Number(event.target.value))

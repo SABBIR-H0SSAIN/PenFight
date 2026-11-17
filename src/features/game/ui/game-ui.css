@@ -166,9 +166,6 @@
 #bottom {
   padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
-#fps {
-  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-}
 #lab .lh,
 #lab .stats,
 #lab .info,

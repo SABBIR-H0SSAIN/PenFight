@@ -54,8 +54,15 @@ export function replayWindow(events, duration) {
     (event) => event.type === "hit" && (!out || event.t <= out.t),
   );
   const focus = out?.t ?? hits.at(-1)?.t ?? duration;
+  // A slow or delayed fall can land beyond the usual highlight tail.
+  const landing = out
+    ? events.findLast((event) => event.type === "landing")
+    : null;
   return {
     start: Math.max(0, focus - gameConfig.playback.replayLead),
-    end: Math.min(duration, focus + gameConfig.playback.replayTail),
+    end: Math.min(
+      duration,
+      Math.max(focus + gameConfig.playback.replayTail, landing?.t ?? 0),
+    ),
   };
 }

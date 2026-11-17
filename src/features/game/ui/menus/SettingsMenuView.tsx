@@ -7,8 +7,8 @@ const toggles = [
   ["amb", "Classroom ambience"],
   ["real", "Realistic physics (rolling, uneven desk)"],
   ["guide", "Aim guide"],
-  ["replay", "Quick highlight after a knock-off"],
-  ["slowmo", "Brief impact slow motion"],
+  ["replay", "Knock-off highlights in player matches"],
+  ["slowmo", "Impact slow motion in player matches"],
   ["fps", "Show frame rate"],
 ] as const;
 export function SettingsMenuView() {

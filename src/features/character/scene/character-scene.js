@@ -770,11 +770,12 @@ export function createCharacterFeature(deps) {
 
   /* one arm: wrist target from the fingertip target, IK, then place all the pieces */
   function poseArm(S, arm, P, sh, dt, raise, fist) {
+    const supported = arm.sx < 0 && P.ty < -5;
     let ang = P.ang;
     if (raise) _s.Wt.copy(raise);
     else {
       ang =
-        S.contactTarget && arm === S.arm[0]
+        supported || (S.contactTarget && arm === S.arm[0])
           ? P.ang
           : arm.fyaw + cl(angDiff(arm.fyaw, P.ang), -1.0, 1.0);
       if (S.contactTarget && arm === S.arm[0]) {
@@ -798,8 +799,10 @@ export function createCharacterFeature(deps) {
       arm.ang +=
         angDiff(arm.ang, ang) * (arm.ready ? 1 - Math.exp(-dt * 20) : 1);
       ang = arm.ang;
-      arm.pitch +=
-        (cl(arm.lastDy * 0.4, -0.3, 0.4) - arm.pitch) * Math.min(1, dt * 8);
+      // Forearm angle changes with the reach of the playing hand and with
+      // the torso lean. A supported palm keeps its own resting orientation.
+      const pitch = supported ? 0 : cl(arm.lastDy * 0.4, -0.3, 0.4);
+      arm.pitch += (pitch - arm.pitch) * Math.min(1, dt * 8);
       tipOffset(P, arm, ang, arm.pitch, _s.off);
       _s.Wt.set(P.tx - _s.off.x, P.ty - _s.off.y, P.tz - _s.off.z);
       handKeep(_s.Wt, ang, arm.pitch, P, arm);
@@ -917,17 +920,10 @@ export function createCharacterFeature(deps) {
       blink = S.blinkT > -0.12;
       if (S.blinkT < -0.12) S.blinkT = 2 + Math.random() * 3;
     }
-    let px = 0,
-      py = 0;
-    if (S.thinking) {
-      px = Math.sin(time * 1.7 + S.idx) * 0.9;
-      py = Math.sin(time * 1.1) * 0.5 - 0.3;
-    } else {
-      S.head.getWorldPosition(_hp);
-      _lv.copy(S.look).sub(_hp);
-      px = -cl(_lv.dot(S.right) / 30, -1, 1) * 0.8;
+    S.head.getWorldPosition(_hp);
+    _lv.copy(S.look).sub(_hp);
+    const px = -cl(_lv.dot(S.right) / 30, -1, 1) * 0.8,
       py = cl(-_lv.y / 40, -1, 1) * 0.6;
-    }
     if (
       blink !== S.blink ||
       Math.abs(px - S.px) > 0.2 ||
@@ -944,8 +940,7 @@ export function createCharacterFeature(deps) {
       S.emoT -= dt;
       if (S.emoT <= 0) S.emo = "neutral";
     }
-    // Thinking is expressed by a subtle hand motion in the lap, not a second
-    // arm suddenly swinging across the board while the other arm is playing.
+    // Keep the resting hand supported while the character studies the board.
     if (S.leftState !== "lap") {
       S.begin("l");
       S.leftState = "lap";
@@ -953,10 +948,6 @@ export function createCharacterFeature(deps) {
     }
     const P0 = Object.assign({}, S.hand),
       P1 = Object.assign({}, S.lhand);
-    if (S.thinking) {
-      P1.ty += Math.sin(time * 3) * 0.35;
-      P1.curl += 0.06 * (1 + Math.sin(time * 4));
-    }
     // lean / scoot: lean far enough forward (and slide the chair a little) that the playing hand can reach its target
     let wantLam = SLOUCH,
       wantScoot = 0,
@@ -1029,14 +1020,17 @@ export function createCharacterFeature(deps) {
     S.scoot = Math.min(S.scoot, safeScoot(S, S.torso.rotation, jump));
     g.position.z = S.side * (SEAT - S.scoot);
     g.position.x = S.shift;
+    if (P1.ty < -5) {
+      // The resting hand moves with the seat instead of dragging across the
+      // thighs when the torso scoots or shifts for a cross-body reach.
+      P1.tx += S.shift;
+      P1.tz -= S.side * S.scoot;
+    }
     g.updateMatrixWorld(true);
     S.invT.copy(S.torso.matrixWorld).invert();
     // head follows the look target; the torso lean is compensated so the eyes stay on it
     S.head.getWorldPosition(_hp);
-    const tgt = S.thinking
-      ? _tg.set(S.look.x + Math.sin(time * 0.9) * 20, S.look.y, S.look.z)
-      : S.look;
-    _lv.copy(tgt).sub(_hp);
+    _lv.copy(S.look).sub(_hp);
     const f = _lv.dot(S.fwd),
       r = _lv.dot(S.right),
       yaw = Math.atan2(r, Math.max(1, f)),
@@ -1047,7 +1041,7 @@ export function createCharacterFeature(deps) {
     S.head.rotation.x +=
       (cl(pitch * 0.85 + totalLean, -0.45, 0.5) +
         headNod +
-        (S.thinking ? 0.1 * Math.sin(time * 1.3) : 0) -
+        (S.thinking ? 0.035 : 0) -
         S.head.rotation.x) *
       Math.min(1, dt * 7);
     S.head.rotation.z +=

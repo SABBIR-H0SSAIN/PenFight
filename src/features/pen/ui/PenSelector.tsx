@@ -42,7 +42,7 @@ export function PenSelector({ value, onChange, label }: PenSelectorProps) {
       {custom && (
         <div className="pen-color-box">
           <div className="pc-top">
-            <strong>{custom.label}</strong>
+            <strong className="pc-title">{custom.label}</strong>
             <span className="pc-name">{PEN_DEFINITIONS[value.pen].name}</span>
           </div>
           <div className="pc-swatches">

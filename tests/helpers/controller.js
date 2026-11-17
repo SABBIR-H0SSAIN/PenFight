@@ -115,6 +115,7 @@ export function controllerFixture(
       pens[i] = { ...pen };
     },
     setPenType() {},
+    clearTrail() {},
     clearTrails() {},
     pushTrail() {},
     ambient() {},

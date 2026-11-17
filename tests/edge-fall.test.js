@@ -155,12 +155,22 @@ test("rendered pen geometry tips around every edge and corner without passing th
           }
         }
       }
-      // The settled match view renders with time=0; it must retain the same
-      // orientation as the final playback frame instead of appearing to float.
-      feature.setPen(pen, result.pens[0], result.t);
-      const finalRotation = pen.holder.quaternion.toArray();
+      const landing = result.events.find((event) => event.type === "landing");
+      const airborne = interpolateRecording(result.rec, landing.t - 0.005).p[0];
+      feature.setPen(pen, airborne, landing.t - 0.005);
+      assert.equal(pen.group.visible, true);
+      assert.equal(pen.shadow.visible, false);
+      feature.setPen(
+        pen,
+        interpolateRecording(result.rec, landing.t).p[0],
+        landing.t,
+      );
+      assert.equal(pen.group.visible, false);
       feature.setPen(pen, result.pens[0], 0);
-      assert.deepEqual(pen.holder.quaternion.toArray(), finalRotation);
+      assert.equal(pen.group.visible, false);
+      feature.setPen(pen, engine.makePen(type, 30, 50, 0), 0, 1);
+      assert.equal(pen.group.visible, true);
+      assert.equal(pen.shadow.visible, true);
     }
   }
   disposeObjectTree(pen.group);

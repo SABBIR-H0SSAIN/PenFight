@@ -284,9 +284,23 @@ test("reach, retract, thinking and all reactions animate both actual rigs at 30/
       assert.equal(await retract, true);
       assert.deepEqual(rig.hand, rig.lapPose(1));
       rig.thinking = true;
-      const leftBefore = rig.arm[1].tip.clone();
-      await step(fps);
-      assert.ok(rig.arm[1].tip.distanceTo(leftBefore) > 0.01);
+      const resting = rig.arm.map((arm) => ({
+        tip: arm.tip.clone(),
+        wrist: arm.hand.group.quaternion.clone(),
+      }));
+      for (let frame = 0; frame < fps * 3; frame++) {
+        await step(1);
+        rig.arm.forEach((arm, index) => {
+          assert.ok(
+            arm.tip.distanceTo(resting[index].tip) < 0.2,
+            "thinking must keep the resting fingertip in the lap",
+          );
+          assert.ok(
+            arm.hand.group.quaternion.angleTo(resting[index].wrist) < 0.08,
+            "thinking must not circle the wrist",
+          );
+        });
+      }
       rig.thinking = false;
       for (const kind of ["happy", "surprise", "frustrated", "victory"]) {
         rig.react = { kind, t: 0, dur: 0.8 };
@@ -308,6 +322,53 @@ test("reach, retract, thinking and all reactions animate both actual rigs at 30/
         );
       }
     }
+});
+
+test("the non-playing palm stays down while the seated character shifts for a shot", (t) => {
+  for (const slot of [0, 1]) {
+    const rig = character(t, slot);
+    let time = 0;
+    const tick = () => {
+      time += 1 / 60;
+      rig.update(1 / 60, time);
+      bones(rig);
+    };
+    rig.thinking = true;
+    for (let frame = 0; frame < 90; frame++) tick();
+    const arm = rig.arm[1];
+    const restingAngle = arm.hand.group.quaternion.clone();
+    const restingPosition = arm.tip.clone().sub(rig.group.position);
+    let bodyTravel = 0;
+    const start = rig.group.position.clone();
+    rig.thinking = false;
+    for (const x of [-27, 27, 0]) {
+      rig.contactTarget = { x, y: 2.22, z: 3 * rig.side };
+      Object.assign(rig.hand, {
+        tx: x,
+        ty: 2.22,
+        tz: 3 * rig.side,
+        curl: 0.62,
+        ang: rig.fa,
+      });
+      for (let frame = 0; frame < 90; frame++) {
+        tick();
+        bodyTravel = Math.max(bodyTravel, rig.group.position.distanceTo(start));
+        assert.ok(
+          arm.hand.group.quaternion.angleTo(restingAngle) < 0.001,
+          "the supported palm must not follow the elbow's twist",
+        );
+      }
+      assert.ok(
+        arm.tip.clone().sub(rig.group.position).distanceTo(restingPosition) <
+          0.2,
+        "after the seat shifts the relaxed hand must still rest on the thigh",
+      );
+    }
+    assert.ok(
+      bodyTravel > 1,
+      "this shot must actually move the seated character",
+    );
+  }
 });
 
 test("real-controller human flicks touch the pen across models, players, views and barrel offsets", async (t) => {

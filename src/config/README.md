@@ -10,7 +10,7 @@
 | `camera`            | Four presets, portrait framing, default zoom/pin state, orbit radius, horizontal/vertical desk fit                                                    |
 | `input`             | Pen safety radii, drag threshold, rotation/tilt sensitivity, pinch threshold, trackpad zoom sensitivity                                               |
 | `physics`           | Gravity, flick speed, spin strength, integration step, surge multiplier, simulation duration                                                          |
-| `playback`          | Recording interval, impact slow motion window/rate, highlight timing                                                                                  |
+| `playback`          | Recording interval, impact slow motion window/rate, highlight timing, AI Battle animation rate cap and pauses                                         |
 | `ai`                | Algorithm labels, difficulties/noise/mistakes/think time, search budgets, cooperative time slices, benchmark seed/budget                              |
 | `pens`, `penColors` | Pen balance, dimensions, materials/descriptions, colours and custom palettes                                                                          |
 | `audio`             | Recording paths, impact variations, material profiles, ambience gains/cutoffs, voice limit                                                            |
@@ -57,7 +57,7 @@ Each section has its own defaults file: `settings.ts`, `preferences.ts`, `matche
 
 For example, edit `input.ts` to change touch protection, `camera.ts` to change the default board view, or `ai.ts` to change search budgets. Add new fields in the owning section and extend `validation.ts`; add any individual alias in `environment.ts` and `.env.example`. Keep raw section modules independent of resolved `gameConfig` to avoid initialization cycles. The section default objects are templates; use `createGameConfig()` to get an independent copy.
 
-`config.test.js` exercises real environment variables through engine/store/match consumers. `config-boundaries.test.js` checks every numeric field's endpoints, integer constraints, finite values, all enum alternatives and boolean coercion. Playback tests cover 30/60/120 Hz sampling independently of the physics step. AI think time `0` means no artificial thinking delay. See [Testing](../../docs/testing.md).
+`config.test.js` exercises real environment variables through engine/store/match consumers. `config-boundaries.test.js` checks every numeric field's endpoints, integer constraints, finite values, all enum alternatives and boolean coercion. Playback tests cover 30/60/120 Hz sampling independently of the physics step. AI think time `0` means no artificial thinking delay. AI Battle settings in `playback.ts` set a character speed cap (`battleAnimationSpeedLimit`, 1–4×, default 1.5×), a minimum think-time cap, and round/turn pauses in animation seconds. The selected speed directly scales the recorded pen motion. See [Testing](../../docs/testing.md).
 
 To start new matches with the view pinned, set `defaultPinned: true` in `camera.ts`, or use `NEXT_PUBLIC_GAME_CONFIG='{"camera":{"defaultPinned":true}}'` in the root environment file. Pin state is local to the current match and is not saved as a browser preference.
 

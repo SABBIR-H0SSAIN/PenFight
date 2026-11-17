@@ -233,8 +233,11 @@ export function createPenFeature(
     p.model.position.y = PF.PENS[type].r;
     p.shadow.scale.set(PF.PENS[type].len * 1.1, 4, 1);
   }
-  /* Put pen mesh at a physics snapshot entry {x,y,a,z,out,outT} */
+  /* Render the airborne fall and retire the mesh once it is settled. */
   function setPen(p, s, t, scale) {
+    p.group.visible = !(s.hidden || (s.out && s.landed));
+    p.shadow.visible = !s.out && p.group.visible;
+    if (!p.group.visible) return;
     p.group.position.set(s.x - W / 2, s.z || 0, s.y - H / 2);
     yawRotation.setFromAxisAngle(up, -s.a);
     if (s.out && s.tipAngle) {
@@ -254,7 +257,6 @@ export function createPenFeature(
       p.model.position.y = height;
     }
     p.group.scale.setScalar(scale == null ? 1 : scale);
-    p.shadow.visible = !s.out || (s.z || 0) > -2;
     p.shadow.rotation.z = s.a;
     p.shadow.material.opacity = 0.35;
   }

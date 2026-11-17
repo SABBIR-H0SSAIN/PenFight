@@ -280,11 +280,13 @@ export function createWorld(PF) {
     a.needsUpdate = true;
     t.l.visible = speed > 25 && t.pts.length > 2;
   };
+  R.clearTrail = function (i) {
+    const trail = R.trail[i];
+    trail.pts.length = 0;
+    trail.l.visible = false;
+  };
   R.clearTrails = function () {
-    R.trail.forEach((t) => {
-      t.pts = [];
-      t.l.visible = false;
-    });
+    R.trail.forEach((_, i) => R.clearTrail(i));
   };
   function aimArrow() {
     const g = new T.Group(),

@@ -373,13 +373,12 @@ button {
   padding: 7px 8px;
 }
 #fps {
-  position: absolute;
-  left: 16px;
-  bottom: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #252b35;
   font: 400 11px var(--mono);
-  color: #e8e6dd;
-  text-shadow: 0 1px 3px #000;
-  z-index: 6;
+  color: #fff;
+  pointer-events: none;
 }
 /* bottom */
 #bottom {
@@ -1862,7 +1861,7 @@ th {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
 }
 #menu .pc-top {
-  align-items: flex-start !important;
+  align-items: baseline;
 }
 #menu .pc-title,
 #menu .pc-input-label,

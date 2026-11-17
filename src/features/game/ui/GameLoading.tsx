@@ -44,59 +44,22 @@ function LoadingPen({ color }: { color: "blue" | "orange" }) {
   );
 }
 
-/** Lightweight CSS animation stays available while the 3D runtime loads. */
 export function GameLoading() {
   return (
-    <div
-      className="runtime-status game-loading"
-      role="status"
-      aria-live="polite"
-    >
+    <div className="runtime-status game-loading">
       <div className="game-loading-content">
-        <span className="game-loading-eyebrow" aria-hidden="true">
-          The desk is your arena
-        </span>
         <div className="game-loading-arena" aria-hidden="true">
-          <div className="game-loading-orbit" />
-          <div className="game-loading-orbit game-loading-orbit--inner" />
-          <span className="game-loading-crosshair" />
-          <span className="game-loading-player game-loading-player--blue">
-            01
-          </span>
-          <span className="game-loading-player game-loading-player--orange">
-            02
-          </span>
           <LoadingPen color="blue" />
           <LoadingPen color="orange" />
-          <div className="game-loading-impact">
-            <svg viewBox="0 0 80 80" fill="none" focusable="false">
-              <path
-                d="m40 12 5 18 17-10-10 17 18 5-18 4 10 17-17-10-5 18-5-18-17 10 10-17-18-4 18-5-10-17 17 10 5-18Z"
-                fill="#fff0bb"
-              />
-              <path
-                d="m15 9-5-5m55 5 5-5M12 65l-6 6m61-6 6 6"
-                stroke="#ffae67"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-          <span className="game-loading-ripple" />
         </div>
-        <div className="game-loading-title" aria-hidden="true">
+        <h1 className="game-loading-title">
           Pen<span>Fight</span>
+          <span className="game-loading-subtitle">Arena</span>
+        </h1>
+        <div className="game-loading-status" role="status">
+          <p>Loading the classroom…</p>
+          <span className="game-loading-track" aria-hidden="true" />
         </div>
-        <span className="game-loading-subtitle" aria-hidden="true">
-          Arena
-        </span>
-        <p className="game-loading-message">Preparing the classroom…</p>
-        <div className="game-loading-track" aria-hidden="true">
-          <span />
-        </div>
-        <p className="game-loading-hint" aria-hidden="true">
-          One desk. Two pens. Bragging rights.
-        </p>
       </div>
     </div>
   );

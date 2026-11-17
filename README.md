@@ -127,7 +127,7 @@ The game includes six algorithms, grouped by approach:
 
 Difficulty also affects execution noise and the chance of choosing a weaker shot. The default algorithms are fuzzy logic for beginner, A* for advanced, and MCTS for expert. Practice and AI battle modes let you select an algorithm directly.
 
-AI Battle runs both selected algorithms with expert settings and no injected aiming noise or random mistakes.
+AI Battle runs both selected algorithms with expert settings and no injected aiming noise or random mistakes. The 1×, 2×, and 4× controls scale pen playback. Character movement speeds up only slightly at higher settings. Automatic highlights and impact slow motion apply to modes with a human player.
 
 <details>
 <summary><strong>How the algorithms fit the game</strong></summary>

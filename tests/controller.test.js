@@ -422,3 +422,72 @@ test("floor impact audio follows paused simulation time and cannot leak into the
   assert.equal(f.soundCalls.filter((c) => c.method === "drop").length, count);
   assert.ok(f.soundCalls.some((c) => c.method === "reset"));
 });
+
+test("AI Battle plays shots at 1×, 2× and 4× while keeping character and thinking time bounded", async (t) => {
+  for (const speed of [1, 2, 4]) {
+    await t.test(`${speed}×`, async (t) => {
+      const fps = 60;
+      const f = controllerFixture(t, { stepMs: 1000 / fps });
+      f.ui.set({
+        settings: { ...f.ui.get().settings, slowmo: true, replay: true },
+        preferences: {
+          ...f.ui.get().preferences,
+          ai: { ...f.ui.get().preferences.ai, speed },
+        },
+      });
+      f.engine.decide = function* () {
+        return {
+          action: { ang: 0, pow: 0.6, off: 0 },
+          info: { moves: [], nodes: [], stats: {} },
+        };
+      };
+      f.engine.shoot = (pens) => {
+        const settled = [{ ...pens[0], out: true, landed: true }, pens[1]];
+        return {
+          pens: settled,
+          out: 0,
+          events: [
+            { type: "hit", t: 0.5, speed: 150, x: 30, y: 50 },
+            { type: "out", t: 0.6, who: 0, x: 30, y: 50 },
+            { type: "landing", t: 1, who: 0, x: 30, y: 50 },
+          ],
+          rec: [
+            { t: 0, p: pens },
+            { t: 1, p: settled },
+          ],
+        };
+      };
+      const setPen = f.world.setPen;
+      const recorded = [];
+      f.world.setPen = (slot, pen, time) => {
+        setPen(slot, pen);
+        if (slot === 0 && time > 0) recorded.push(time);
+      };
+      const animationSteps = [];
+      f.world.students[0].update = (dt) => animationSteps.push(dt);
+      let thinkingFrames = 0;
+      f.controller.start("aivai");
+      for (let frame = 0; frame < 180 && recorded.at(-1) !== 1; frame++) {
+        await f.advance();
+        if (f.ui.get().thinking) thinkingFrames++;
+      }
+      assert.equal(recorded.at(-1), 1);
+      assert.deepEqual(f.ui.get().scores, [0, 1]);
+      for (let frame = 0; frame < 30; frame++) {
+        await f.advance();
+        assert.equal(f.ui.get().replaying, false);
+      }
+      assert.ok(
+        Math.abs(recorded.length - fps / speed) <= 1,
+        "a one-second physics recording should take 1/speed seconds",
+      );
+      assert.ok(
+        Math.max(...animationSteps) <= Math.min(speed, 1.5) / fps + 1e-9,
+      );
+      assert.ok(
+        Math.abs(thinkingFrames - (0.3 * fps) / Math.min(speed, 1.5)) <= 1,
+        "the artificial delay must be shortened and scaled once",
+      );
+    });
+  }
+});

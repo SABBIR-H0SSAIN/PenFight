@@ -6,7 +6,7 @@ import { disposeObjectTree } from "@/game/scene/dispose.js";
 import { useGameServices } from "@/features/game/runtime/GameProvider";
 import type { Object3D } from "three";
 import type { PenKind } from "./types";
-import type { PenState } from "@/game/contracts";
+import type { PenRenderState } from "@/game/scene/types";
 export interface PenProps {
   slot: 0 | 1;
   model?: PenKind;
@@ -41,7 +41,7 @@ export function Pen({
       group: pen.group,
       setType: (type: PenKind, tint?: string | null) =>
         feature.setPenType(pen, type, tint),
-      setState: (state: PenState, time: number, scale?: number) =>
+      setState: (state: PenRenderState, time: number, scale?: number) =>
         feature.setPen(pen, state, time, scale),
     };
     pen.group.name = `pen-${slot}`;

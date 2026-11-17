@@ -77,6 +77,9 @@ test("replay is bounded around the decisive event instead of replaying the whole
   const clip = replayWindow(events, 4.8);
   assert.ok(clip.start > 3 && clip.end < 4.1);
   assert.ok((clip.end - clip.start) / 0.9 < 1.1);
+  const slowFall = replayWindow([...events, { type: "landing", t: 4.25 }], 4.8);
+  assert.equal(slowFall.start, clip.start);
+  assert.equal(slowFall.end, 4.25);
   assert.deepEqual(replayWindow([], 0.1), { start: 0, end: 0.1 });
 });
 test("reaching is smooth and wrists stay within a comfortable forward range", () => {

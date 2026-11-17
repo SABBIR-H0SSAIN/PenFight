@@ -50,6 +50,10 @@
 #menu .pen-selector .pc-name {
   overflow-wrap: anywhere;
 }
+#menu .ai-pen-panel .pc-top > * {
+  font-size: 16px !important;
+  line-height: 1.2;
+}
 #menu .pen-selector .pc-row {
   grid-template-columns: minmax(0, 1fr) auto !important;
   min-width: 0;
@@ -64,6 +68,28 @@
 #menu .two > section {
   min-width: 0;
 }
+
+/* Keep the six-colour palette on one row in a split AI picker when it fits. */
+#menu .ai-pen-panel .pc-swatches {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 30px));
+  gap: 6px;
+}
+#menu .ai-pen-panel .pc-swatch {
+  width: 100%;
+}
+#menu .ai-pen-panel .pen-selector .pc-row {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+}
+#menu .ai-pen-panel .pc-input-label {
+  flex-wrap: nowrap;
+  font-size: 16px !important;
+}
+#menu .ai-pen-panel .pc-input {
+  width: 34px;
+}
+
 @container (max-width: 380px) {
   #menu .pen-selector .pen-options {
     grid-template-columns: minmax(0, 1fr);
@@ -73,6 +99,15 @@
     gap: 12px;
   }
   #menu .pen-selector .pc-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+/* Below this width, six targets plus the panel padding would be too cramped. */
+@container (width < 200px) {
+  #menu .ai-pen-panel .pc-swatches {
+    grid-template-columns: repeat(3, minmax(0, 30px));
+  }
+  #menu .ai-pen-panel .pen-selector .pc-row {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }

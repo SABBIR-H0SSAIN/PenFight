@@ -230,6 +230,9 @@ export function GameControls() {
         </div>
       )}
       <div id="bottom">
+        {state.settings.fps && state.fpsLabel && (
+          <div id="fps">{state.fpsLabel}</div>
+        )}
         {state.surge.visible && (
           <button
             className="tb"
@@ -248,7 +251,6 @@ export function GameControls() {
           {state.turn.label}
         </div>
       </div>
-      {state.settings.fps && <div id="fps">{state.fpsLabel}</div>}
     </>
   );
 }
